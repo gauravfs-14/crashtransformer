@@ -34,8 +34,10 @@ A comprehensive pipeline for generating causal summaries from crash narratives u
 ```
 crashtransformer/
 ├── crash_transformer_pipeline.py    # Main pipeline
-├── enhanced_evaluation.py           # Comprehensive evaluation module
-├── cross_validation_module.py       # Cross-validation module
+├── src/                             # Source modules
+│   ├── __init__.py                 # Package initialization
+│   ├── enhanced_evaluation.py      # Comprehensive evaluation module
+│   └── cross_validation_module.py  # Cross-validation module
 ├── inference_script.py              # Inference and analysis script
 ├── run_comprehensive_evaluation.py  # Standalone evaluation runner
 ├── test_pipeline.py                 # Test script
@@ -287,7 +289,7 @@ tail -f logs/crashtransformer_*.log
 
 ### Custom Evaluation
 ```python
-from enhanced_evaluation import ComprehensiveEvaluator
+from src.enhanced_evaluation import ComprehensiveEvaluator
 
 evaluator = ComprehensiveEvaluator("results")
 metrics = evaluator.compute_all_metrics(predictions, references, narratives)
@@ -296,7 +298,7 @@ evaluator.create_comprehensive_visualizations(predictions, references, narrative
 
 ### Custom Cross-Validation
 ```python
-from cross_validation_module import CrossValidator
+from src.cross_validation_module import CrossValidator
 
 cv = CrossValidator("results")
 results = cv.run_cross_validation(narratives, summaries, n_splits=5, epochs=2)

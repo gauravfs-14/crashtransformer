@@ -19,13 +19,13 @@ import time
 
 # Enhanced evaluation imports
 try:
-    from enhanced_evaluation import ComprehensiveEvaluator
+    from src.enhanced_evaluation import ComprehensiveEvaluator
     ENHANCED_EVAL_AVAILABLE = True
 except ImportError:
     ENHANCED_EVAL_AVAILABLE = False
 
 try:
-    from cross_validation_module import CrossValidator
+    from src.cross_validation_module import CrossValidator
     CV_AVAILABLE = True
 except ImportError:
     CV_AVAILABLE = False
@@ -571,7 +571,7 @@ bertscore_results = None
 # Use enhanced evaluation if available
 if ENHANCED_EVAL_AVAILABLE:
     try:
-        from enhanced_evaluation import ComprehensiveEvaluator
+        from src.enhanced_evaluation import ComprehensiveEvaluator
         evaluator = ComprehensiveEvaluator(RESULTS_DIR)
         all_metrics = evaluator.compute_all_metrics(predictions, references, sample_texts)
         
@@ -622,7 +622,15 @@ all_metrics = {
 # Log metrics
 logger.info(f"📊 ROUGE Scores: {rouge_results}")
 if bertscore_results and 'f1' in bertscore_results:
-    logger.info(f"📊 BERTScore F1: {bertscore_results['f1']:.4f}")
+    # Handle both list and scalar values for BERTScore F1
+    f1_value = bertscore_results['f1']
+    if isinstance(f1_value, list):
+        # If it's a list, take the mean
+        f1_mean = np.mean(f1_value)
+        logger.info(f"📊 BERTScore F1: {f1_mean:.4f}")
+    else:
+        # If it's a scalar
+        logger.info(f"📊 BERTScore F1: {f1_value:.4f}")
 else:
     logger.info("📊 BERTScore: Not available")
 logger.info(f"⏱️  Training Time: {training_duration:.2f} seconds ({training_duration/60:.2f} minutes)")
@@ -641,11 +649,49 @@ logger.info("✅ Results saved successfully")
 # 📈 Plot ROUGE Scores
 # =======================
 logger.info("📊 Creating visualization...")
-plt.figure(figsize=(8, 6))
+
+# Setup academic plotting style with white backgrounds and large fonts
+plt.rcParams.update({
+    'font.family': 'Times New Roman',
+    'font.size': 28,
+    'axes.titlesize': 36,
+    'axes.labelsize': 32,
+    'xtick.labelsize': 36,  # Increased significantly for better visibility
+    'ytick.labelsize': 36,  # Increased significantly for better visibility
+    'legend.fontsize': 28,
+    'figure.titlesize': 40,
+    'figure.dpi': 300,
+    'savefig.dpi': 300,
+    'savefig.bbox': 'tight',
+    'savefig.pad_inches': 0.4,
+    'lines.linewidth': 3.0,
+    'axes.linewidth': 2.0,
+    'grid.linewidth': 1.5,
+    'grid.alpha': 0.6,
+    'axes.edgecolor': 'black',
+    'axes.spines.top': True,
+    'axes.spines.right': True,
+    'axes.spines.bottom': True,
+    'axes.spines.left': True,
+    # White background settings
+    'figure.facecolor': 'white',
+    'axes.facecolor': 'white',
+    'savefig.facecolor': 'white'
+})
+
+# Use default style for white background
+plt.style.use('default')
+
+fig, ax = plt.subplots(figsize=(12, 8), facecolor='white')
+ax.set_facecolor('white')
+
+# Initialize variables
+scores = []
+labels = ["ROUGE-1", "ROUGE-2", "ROUGE-L"]
+bars = None
+
 if rouge_results:
     # Extract F1 scores from the nested dictionary structure
-    scores = []
-    labels = ["ROUGE-1", "ROUGE-2", "ROUGE-L"]
     for metric in ["rouge1", "rouge2", "rougeL"]:
         if metric in rouge_results and "fmeasure" in rouge_results[metric]:
             scores.append(float(rouge_results[metric]["fmeasure"]))
@@ -653,17 +699,29 @@ if rouge_results:
             scores.append(0.0)
     
     if scores:
-        sns.barplot(x=labels, y=scores, palette="viridis")
+        bars = ax.bar(labels, scores, color=['#FF6B6B', '#4ECDC4', '#45B7D1'], 
+                     alpha=0.8, edgecolor='black', linewidth=2.0)
 
-plt.title("CrashTransformer ROUGE Scores", fontsize=18, fontweight="bold")
-plt.ylabel("Score", fontsize=16, fontweight="bold")
-plt.xlabel("Metric", fontsize=16, fontweight="bold")
-plt.xticks(fontsize=14)
-plt.yticks(fontsize=14)
-plt.grid(axis="y", linestyle="--", linewidth=0.7)
+ax.set_title("CrashTransformer ROUGE Scores", fontsize=40, fontweight="bold", pad=30)
+ax.set_ylabel("Score", fontsize=36, fontweight="bold")
+ax.set_xlabel("Metric", fontsize=36, fontweight="bold")
+ax.tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+# Make tick labels bold
+for label in ax.get_xticklabels() + ax.get_yticklabels():
+    label.set_fontweight('bold')
+ax.grid(axis="y", linestyle="--", linewidth=1.5, alpha=0.6)
+
+# Add value labels on bars
+if rouge_results and scores and bars is not None:
+    for i, (bar, score) in enumerate(zip(bars, scores)):
+        height = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width()/2., height + 0.01,
+               f'{score:.3f}', ha='center', va='bottom', 
+               fontweight='bold', fontsize=28)
+
 plt.tight_layout()
-plt.savefig(f"{RESULTS_DIR}/rouge_scores_plot.png", dpi=300)
-plt.show()
+plt.savefig(f"{RESULTS_DIR}/rouge_scores_plot.png", dpi=300, bbox_inches='tight', facecolor='white')
+plt.close()
 logger.info("✅ Visualization saved")
 
 # =======================
@@ -673,7 +731,7 @@ cv_results = None
 if CV_AVAILABLE and not args.test:
     logger.info("🔄 Starting cross-validation...")
     try:
-        from cross_validation_module import CrossValidator
+        from src.cross_validation_module import CrossValidator
         cv = CrossValidator(results_dir=RESULTS_DIR)
         cv_results = cv.run_cross_validation(
             narratives=df["Narrative"].tolist(),

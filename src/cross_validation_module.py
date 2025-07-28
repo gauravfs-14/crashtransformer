@@ -31,6 +31,39 @@ class CrossValidator:
         self.tokenizer = None
         self.model = None
         
+        # Setup academic plotting style
+        self._setup_academic_plotting()
+    
+    def _setup_academic_plotting(self):
+        """Setup academic plotting style for publication-quality figures with large fonts and white backgrounds."""
+        plt.rcParams.update({
+            'font.family': 'Times New Roman',
+            'font.size': 28,
+            'axes.titlesize': 36,
+            'axes.labelsize': 32,
+            'xtick.labelsize': 36,  # Increased significantly for better visibility
+            'ytick.labelsize': 36,  # Increased significantly for better visibility
+            'legend.fontsize': 28,
+            'figure.titlesize': 40,
+            'figure.dpi': 300,
+            'savefig.dpi': 300,
+            'savefig.bbox': 'tight',
+            'savefig.pad_inches': 0.4,
+            'lines.linewidth': 3.0,
+            'axes.linewidth': 2.0,
+            'grid.linewidth': 1.5,
+            'grid.alpha': 0.6,
+            'axes.edgecolor': 'black',
+            'axes.spines.top': True,
+            'axes.spines.right': True,
+            'axes.spines.bottom': True,
+            'axes.spines.left': True,
+            # White background settings
+            'figure.facecolor': 'white',
+            'axes.facecolor': 'white',
+            'savefig.facecolor': 'white'
+        })
+        
     def setup_model_and_tokenizer(self):
         """Setup model and tokenizer for cross-validation."""
         logging.info("🔧 Setting up model and tokenizer for cross-validation...")
@@ -126,7 +159,7 @@ class CrossValidator:
     
     def compute_fold_metrics(self, predictions, references):
         """Compute metrics for one fold."""
-        from enhanced_evaluation import ComprehensiveEvaluator
+        from .enhanced_evaluation import ComprehensiveEvaluator
         
         evaluator = ComprehensiveEvaluator(self.results_dir)
         metrics = evaluator.compute_all_metrics(predictions, references)
@@ -292,25 +325,8 @@ class CrossValidator:
         """Create cross-validation visualizations with academic formatting."""
         logging.info("📈 Creating cross-validation visualizations...")
         
-        # Setup academic plotting style
-        plt.rcParams.update({
-            'font.family': 'serif',
-            'font.size': 10,
-            'axes.titlesize': 12,
-            'axes.labelsize': 10,
-            'xtick.labelsize': 9,
-            'ytick.labelsize': 9,
-            'legend.fontsize': 9,
-            'figure.titlesize': 14,
-            'figure.dpi': 300,
-            'savefig.dpi': 300,
-            'savefig.bbox': 'tight',
-            'savefig.pad_inches': 0.1,
-            'lines.linewidth': 1.5,
-            'axes.linewidth': 0.8,
-            'grid.linewidth': 0.5,
-            'grid.alpha': 0.3
-        })
+        # Use default style for white background
+        plt.style.use('default')
         
         # 1. Fold Performance Comparison
         self._plot_fold_performance(cv_results)
@@ -327,10 +343,14 @@ class CrossValidator:
         logging.info("✅ Cross-validation visualizations created")
     
     def _plot_fold_performance(self, cv_results):
-        """Plot performance comparison across folds with academic formatting."""
-        # Create figure suitable for 2-column layout
-        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-        colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D']
+        """Plot performance comparison across folds with large fonts for maximum visibility."""
+        # Create figure suitable for 2-column layout with larger size and white background
+        fig, axes = plt.subplots(2, 2, figsize=(20, 16), facecolor='white')
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']  # Professional colors
+        
+        # Set white background for all subplots
+        for ax in axes.flat:
+            ax.set_facecolor('white')
         
         # ROUGE-1 F1 scores
         rouge1_f1_scores = []
@@ -340,19 +360,23 @@ class CrossValidator:
         
         if rouge1_f1_scores:
             bars = axes[0, 0].bar(range(1, len(rouge1_f1_scores) + 1), rouge1_f1_scores, 
-                                 color=colors[0], alpha=0.8, edgecolor='black', linewidth=0.5)
-            axes[0, 0].set_title('ROUGE-1 F1 Scores by Fold', fontweight='bold', pad=15)
-            axes[0, 0].set_xlabel('Fold', fontweight='bold')
-            axes[0, 0].set_ylabel('ROUGE-1 F1 Score', fontweight='bold')
+                                 color=colors[0], alpha=0.8, edgecolor='black', linewidth=2.0)
+            axes[0, 0].set_title('ROUGE-1 F1 Scores by Fold', fontweight='bold', pad=25, fontsize=36)
+            axes[0, 0].set_xlabel('Fold', fontweight='bold', fontsize=32)
+            axes[0, 0].set_ylabel('ROUGE-1 F1 Score', fontweight='bold', fontsize=32)
             axes[0, 0].set_xticks(range(1, len(rouge1_f1_scores) + 1))
-            axes[0, 0].grid(axis='y', alpha=0.3, linestyle='--')
+            axes[0, 0].grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+            axes[0, 0].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+            # Make tick labels bold
+            for label in axes[0, 0].get_xticklabels() + axes[0, 0].get_yticklabels():
+                label.set_fontweight('bold')
             
             # Add value labels
             for bar, score in zip(bars, rouge1_f1_scores):
                 height = bar.get_height()
                 axes[0, 0].text(bar.get_x() + bar.get_width()/2., height + 0.01,
                                f'{score:.3f}', ha='center', va='bottom', 
-                               fontweight='bold', fontsize=8)
+                               fontweight='bold', fontsize=28)
         
         # ROUGE-2 F1 scores
         rouge2_f1_scores = []
@@ -362,19 +386,23 @@ class CrossValidator:
         
         if rouge2_f1_scores:
             bars = axes[0, 1].bar(range(1, len(rouge2_f1_scores) + 1), rouge2_f1_scores, 
-                                 color=colors[1], alpha=0.8, edgecolor='black', linewidth=0.5)
-            axes[0, 1].set_title('ROUGE-2 F1 Scores by Fold', fontweight='bold', pad=15)
-            axes[0, 1].set_xlabel('Fold', fontweight='bold')
-            axes[0, 1].set_ylabel('ROUGE-2 F1 Score', fontweight='bold')
+                                 color=colors[1], alpha=0.8, edgecolor='black', linewidth=2.0)
+            axes[0, 1].set_title('ROUGE-2 F1 Scores by Fold', fontweight='bold', pad=25, fontsize=36)
+            axes[0, 1].set_xlabel('Fold', fontweight='bold', fontsize=32)
+            axes[0, 1].set_ylabel('ROUGE-2 F1 Score', fontweight='bold', fontsize=32)
             axes[0, 1].set_xticks(range(1, len(rouge2_f1_scores) + 1))
-            axes[0, 1].grid(axis='y', alpha=0.3, linestyle='--')
+            axes[0, 1].grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+            axes[0, 1].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+            # Make tick labels bold
+            for label in axes[0, 1].get_xticklabels() + axes[0, 1].get_yticklabels():
+                label.set_fontweight('bold')
             
             # Add value labels
             for bar, score in zip(bars, rouge2_f1_scores):
                 height = bar.get_height()
                 axes[0, 1].text(bar.get_x() + bar.get_width()/2., height + 0.01,
                                f'{score:.3f}', ha='center', va='bottom', 
-                               fontweight='bold', fontsize=8)
+                               fontweight='bold', fontsize=28)
         
         # ROUGE-L F1 scores
         rougeL_f1_scores = []
@@ -384,19 +412,23 @@ class CrossValidator:
         
         if rougeL_f1_scores:
             bars = axes[1, 0].bar(range(1, len(rougeL_f1_scores) + 1), rougeL_f1_scores, 
-                                 color=colors[2], alpha=0.8, edgecolor='black', linewidth=0.5)
-            axes[1, 0].set_title('ROUGE-L F1 Scores by Fold', fontweight='bold', pad=15)
-            axes[1, 0].set_xlabel('Fold', fontweight='bold')
-            axes[1, 0].set_ylabel('ROUGE-L F1 Score', fontweight='bold')
+                                 color=colors[2], alpha=0.8, edgecolor='black', linewidth=2.0)
+            axes[1, 0].set_title('ROUGE-L F1 Scores by Fold', fontweight='bold', pad=25, fontsize=28)
+            axes[1, 0].set_xlabel('Fold', fontweight='bold', fontsize=24)
+            axes[1, 0].set_ylabel('ROUGE-L F1 Score', fontweight='bold', fontsize=24)
             axes[1, 0].set_xticks(range(1, len(rougeL_f1_scores) + 1))
-            axes[1, 0].grid(axis='y', alpha=0.3, linestyle='--')
+            axes[1, 0].grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+            axes[1, 0].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+            # Make tick labels bold
+            for label in axes[1, 0].get_xticklabels() + axes[1, 0].get_yticklabels():
+                label.set_fontweight('bold')
             
             # Add value labels
             for bar, score in zip(bars, rougeL_f1_scores):
                 height = bar.get_height()
                 axes[1, 0].text(bar.get_x() + bar.get_width()/2., height + 0.01,
                                f'{score:.3f}', ha='center', va='bottom', 
-                               fontweight='bold', fontsize=8)
+                               fontweight='bold', fontsize=28)
         
         # Overall performance summary
         summary_text = f"""
@@ -416,19 +448,23 @@ class CrossValidator:
         """
         
         axes[1, 1].text(0.1, 0.5, summary_text, transform=axes[1, 1].transAxes, 
-                       fontsize=10, verticalalignment='center')
-        axes[1, 1].set_title('Performance Summary')
+                       fontsize=28, verticalalignment='center', fontweight='bold')
+        axes[1, 1].set_title('Performance Summary', fontsize=36, fontweight='bold', pad=25)
         axes[1, 1].axis('off')
         
         plt.tight_layout()
-        plt.savefig(f"{self.cv_dir}/fold_performance.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.cv_dir}/fold_performance.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_metric_distribution(self, cv_results):
         """Plot metric distribution across folds with academic formatting."""
-        # Create figure suitable for 2-column layout
-        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+        # Create figure suitable for 2-column layout with white background
+        fig, axes = plt.subplots(2, 2, figsize=(12, 8), facecolor='white')
         colors = ['#2E86AB', '#A23B72', '#F18F01']
+        
+        # Set white background for all subplots
+        for ax in axes.flat:
+            ax.set_facecolor('white')
         
         # ROUGE metrics distribution
         rouge_metrics = ['rouge1', 'rouge2', 'rougeL']
@@ -443,21 +479,25 @@ class CrossValidator:
         for i, metric in enumerate(rouge_metrics):
             row, col = i // 2, i % 2
             axes[row, col].hist(rouge_data[metric], bins=10, alpha=0.7, color=colors[i], 
-                               edgecolor='black', linewidth=0.5)
+                               edgecolor='black', linewidth=2.0)
             axes[row, col].axvline(np.mean(rouge_data[metric]), color='red', linestyle='--', 
-                                  alpha=0.8, linewidth=1.5)
-            axes[row, col].set_title(f'{metric.upper()} F1 Distribution', fontweight='bold', pad=15)
-            axes[row, col].set_xlabel('F1 Score', fontweight='bold')
-            axes[row, col].set_ylabel('Frequency', fontweight='bold')
-            axes[row, col].grid(alpha=0.3, linestyle='--')
-            axes[row, col].tick_params(axis='both', which='major', labelsize=9)
+                                  alpha=0.8, linewidth=3.0)
+            axes[row, col].set_title(f'{metric.upper()} F1 Distribution', fontweight='bold', pad=25, fontsize=36)
+            axes[row, col].set_xlabel('F1 Score', fontweight='bold', fontsize=32)
+            axes[row, col].set_ylabel('Frequency', fontweight='bold', fontsize=32)
+            axes[row, col].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+            axes[row, col].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+            # Make tick labels bold
+            for label in axes[row, col].get_xticklabels() + axes[row, col].get_yticklabels():
+                label.set_fontweight('bold')
             
             # Add statistics annotation
             mean_val = np.mean(rouge_data[metric])
             std_val = np.std(rouge_data[metric])
             axes[row, col].text(0.02, 0.98, f'Mean: {mean_val:.3f}\nStd: {std_val:.3f}', 
                                transform=axes[row, col].transAxes, verticalalignment='top',
-                               bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+                               bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, edgecolor='black', linewidth=2.0),
+                               fontsize=24, fontweight='bold')
         
         # Summary statistics
         summary_text = f"""
@@ -477,32 +517,39 @@ class CrossValidator:
         """
         
         axes[1, 1].text(0.1, 0.5, summary_text, transform=axes[1, 1].transAxes, 
-                       fontsize=10, verticalalignment='center', fontweight='bold')
-        axes[1, 1].set_title('Distribution Summary', fontweight='bold', pad=15)
+                       fontsize=28, verticalalignment='center', fontweight='bold')
+        axes[1, 1].set_title('Distribution Summary', fontweight='bold', pad=25, fontsize=36)
         axes[1, 1].axis('off')
         
         plt.tight_layout()
-        plt.savefig(f"{self.cv_dir}/metric_distribution.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.cv_dir}/metric_distribution.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_learning_curves(self, cv_results):
         """Plot learning curves with academic formatting."""
         # This would require access to training history
         # For now, create a placeholder plot with academic formatting
-        fig, ax = plt.subplots(figsize=(8, 5))
+        fig, ax = plt.subplots(figsize=(10, 8), facecolor='white')
+        ax.set_facecolor('white')
         ax.text(0.5, 0.5, 'Learning curves would be plotted here\nif training history is available', 
-                ha='center', va='center', transform=ax.transAxes, fontsize=12, fontweight='bold')
-        ax.set_title('Learning Curves', fontweight='bold', pad=20)
+                ha='center', va='center', transform=ax.transAxes, fontsize=32, fontweight='bold')
+        ax.set_title('Learning Curves', fontweight='bold', pad=30, fontsize=40)
         ax.axis('off')
+        
         plt.tight_layout()
-        plt.savefig(f"{self.cv_dir}/learning_curves.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.cv_dir}/learning_curves.png", dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
         plt.close()
     
     def _plot_prediction_quality_by_fold(self, cv_results):
         """Plot prediction quality analysis by fold with academic formatting."""
-        # Create figure suitable for 2-column layout
-        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+        # Create figure suitable for 2-column layout with white background
+        fig, axes = plt.subplots(2, 2, figsize=(12, 8), facecolor='white')
         colors = ['#2E86AB', '#A23B72', '#F18F01', '#C73E1D']
+        
+        # Set white background for all subplots
+        for ax in axes.flat:
+            ax.set_facecolor('white')
         
         # Quality scores by fold
         quality_scores_by_fold = []
@@ -520,19 +567,20 @@ class CrossValidator:
         # Plot quality by fold
         if quality_scores_by_fold:
             bars = axes[0, 0].bar(range(1, len(quality_scores_by_fold) + 1), quality_scores_by_fold, 
-                                 color=colors[0], alpha=0.8, edgecolor='black', linewidth=0.5)
-            axes[0, 0].set_title('Average Quality Score by Fold', fontweight='bold', pad=15)
-            axes[0, 0].set_xlabel('Fold', fontweight='bold')
-            axes[0, 0].set_ylabel('Quality Score', fontweight='bold')
+                                 color=colors[0], alpha=0.8, edgecolor='black', linewidth=2.0)
+            axes[0, 0].set_title('Average Quality Score by Fold', fontweight='bold', pad=25, fontsize=36)
+            axes[0, 0].set_xlabel('Fold', fontweight='bold', fontsize=32)
+            axes[0, 0].set_ylabel('Quality Score', fontweight='bold', fontsize=32)
             axes[0, 0].set_xticks(range(1, len(quality_scores_by_fold) + 1))
-            axes[0, 0].grid(axis='y', alpha=0.3, linestyle='--')
+            axes[0, 0].grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+            axes[0, 0].tick_params(axis='both', which='major', labelsize=28, width=2.0, length=8)
             
             # Add value labels
             for bar, score in zip(bars, quality_scores_by_fold):
                 height = bar.get_height()
                 axes[0, 0].text(bar.get_x() + bar.get_width()/2., height + 0.01,
                                f'{score:.3f}', ha='center', va='bottom', 
-                               fontweight='bold', fontsize=8)
+                               fontweight='bold', fontsize=28)
         
         # Quality distribution across all folds
         all_quality_scores = []
@@ -547,19 +595,21 @@ class CrossValidator:
         
         if all_quality_scores:
             axes[0, 1].hist(all_quality_scores, bins=30, alpha=0.7, color=colors[1], 
-                           edgecolor='black', linewidth=0.5)
+                           edgecolor='black', linewidth=2.0)
             axes[0, 1].axvline(np.mean(all_quality_scores), color='red', linestyle='--', 
-                              alpha=0.8, linewidth=1.5)
-            axes[0, 1].set_title('Quality Score Distribution (All Folds)', fontweight='bold', pad=15)
-            axes[0, 1].set_xlabel('Quality Score', fontweight='bold')
-            axes[0, 1].set_ylabel('Frequency', fontweight='bold')
-            axes[0, 1].grid(alpha=0.3, linestyle='--')
+                              alpha=0.8, linewidth=3.0)
+            axes[0, 1].set_title('Quality Score Distribution (All Folds)', fontweight='bold', pad=25, fontsize=36)
+            axes[0, 1].set_xlabel('Quality Score', fontweight='bold', fontsize=32)
+            axes[0, 1].set_ylabel('Frequency', fontweight='bold', fontsize=32)
+            axes[0, 1].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+            axes[0, 1].tick_params(axis='both', which='major', labelsize=28, width=2.0, length=8)
             
             # Add mean annotation
             mean_val = np.mean(all_quality_scores)
             axes[0, 1].text(0.02, 0.98, f'Mean: {mean_val:.3f}', 
                            transform=axes[0, 1].transAxes, verticalalignment='top',
-                           bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+                           bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, edgecolor='black', linewidth=2.0),
+                           fontsize=24, fontweight='bold')
         
         # Quality vs length
         all_lengths = []
@@ -568,11 +618,12 @@ class CrossValidator:
                 all_lengths.append(len(pred.split()))
         
         if all_lengths and all_quality_scores:
-            axes[1, 0].scatter(all_lengths, all_quality_scores, alpha=0.6, color=colors[2], s=20)
-            axes[1, 0].set_title('Quality vs Prediction Length', fontweight='bold', pad=15)
-            axes[1, 0].set_xlabel('Prediction Length', fontweight='bold')
-            axes[1, 0].set_ylabel('Quality Score', fontweight='bold')
-            axes[1, 0].grid(alpha=0.3, linestyle='--')
+            axes[1, 0].scatter(all_lengths, all_quality_scores, alpha=0.6, color=colors[2], s=80)
+            axes[1, 0].set_title('Quality vs Prediction Length', fontweight='bold', pad=25, fontsize=36)
+            axes[1, 0].set_xlabel('Prediction Length', fontweight='bold', fontsize=32)
+            axes[1, 0].set_ylabel('Quality Score', fontweight='bold', fontsize=32)
+            axes[1, 0].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+            axes[1, 0].tick_params(axis='both', which='major', labelsize=28, width=2.0, length=8)
         
         # Summary statistics
         summary_text = f"""
@@ -592,12 +643,12 @@ class CrossValidator:
         """
         
         axes[1, 1].text(0.1, 0.5, summary_text, transform=axes[1, 1].transAxes, 
-                       fontsize=10, verticalalignment='center', fontweight='bold')
-        axes[1, 1].set_title('Quality Summary', fontweight='bold', pad=15)
+                       fontsize=28, verticalalignment='center', fontweight='bold')
+        axes[1, 1].set_title('Quality Summary', fontweight='bold', pad=25, fontsize=36)
         axes[1, 1].axis('off')
         
         plt.tight_layout()
-        plt.savefig(f"{self.cv_dir}/prediction_quality.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.cv_dir}/prediction_quality.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
 
 def main():

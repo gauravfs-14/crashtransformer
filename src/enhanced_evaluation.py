@@ -79,24 +79,33 @@ class ComprehensiveEvaluator:
         self._setup_academic_plotting()
     
     def _setup_academic_plotting(self):
-        """Setup academic plotting style for publication-quality figures."""
+        """Setup academic plotting style for publication-quality figures with large fonts and white backgrounds."""
         plt.rcParams.update({
-            'font.family': 'serif',
-            'font.size': 10,
-            'axes.titlesize': 12,
-            'axes.labelsize': 10,
-            'xtick.labelsize': 9,
-            'ytick.labelsize': 9,
-            'legend.fontsize': 9,
-            'figure.titlesize': 14,
+            'font.family': 'Times New Roman',
+            'font.size': 28,  # Increased from 20
+            'axes.titlesize': 36,  # Increased from 28
+            'axes.labelsize': 32,  # Increased from 24
+            'xtick.labelsize': 36,  # Increased significantly for better visibility
+            'ytick.labelsize': 36,  # Increased significantly for better visibility
+            'legend.fontsize': 28,  # Increased from 20
+            'figure.titlesize': 40,  # Increased from 32
             'figure.dpi': 300,
             'savefig.dpi': 300,
             'savefig.bbox': 'tight',
-            'savefig.pad_inches': 0.1,
-            'lines.linewidth': 1.5,
-            'axes.linewidth': 0.8,
-            'grid.linewidth': 0.5,
-            'grid.alpha': 0.3
+            'savefig.pad_inches': 0.4,
+            'lines.linewidth': 3.0,
+            'axes.linewidth': 2.0,
+            'grid.linewidth': 1.5,
+            'grid.alpha': 0.6,
+            'axes.edgecolor': 'black',
+            'axes.spines.top': True,
+            'axes.spines.right': True,
+            'axes.spines.bottom': True,
+            'axes.spines.left': True,
+            # White background settings
+            'figure.facecolor': 'white',
+            'axes.facecolor': 'white',
+            'savefig.facecolor': 'white'
         })
         
     def compute_rouge_metrics(self, predictions, references):
@@ -281,14 +290,17 @@ class ComprehensiveEvaluator:
         if narratives:
             self.raw_data['narratives'] = narratives
         
+        # Store metrics for visualization
+        self.metrics = all_metrics
+        
         return all_metrics
     
     def create_comprehensive_visualizations(self, predictions, references, narratives=None):
         """Create comprehensive visualizations."""
         logging.info("📈 Creating comprehensive visualizations...")
         
-        # Set style
-        plt.style.use('seaborn-v0_8')
+        # Ensure white background and large fonts
+        plt.style.use('default')  # Use default style instead of seaborn for white background
         sns.set_palette("husl")
         
         # 1. ROUGE Scores Bar Plot
@@ -329,155 +341,211 @@ class ComprehensiveEvaluator:
         logging.info("✅ All visualizations created")
     
     def _plot_rouge_scores(self):
-        """Plot ROUGE scores with academic formatting."""
+        """Plot ROUGE scores with large fonts for maximum visibility."""
         rouge_data = self.metrics['rouge']
         
-        # Create figure suitable for 2-column layout
-        fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+        # Create figure suitable for 2-column layout with larger size and white background
+        fig, axes = plt.subplots(1, 3, figsize=(24, 8), facecolor='white')
         metrics = ['rouge1', 'rouge2', 'rougeL']
-        colors = ['#2E86AB', '#A23B72', '#F18F01']
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Professional blue, orange, green
         
         for i, metric in enumerate(metrics):
+            # Set white background for each subplot
+            axes[i].set_facecolor('white')
+            
             scores = [rouge_data[metric]['precision'], 
                      rouge_data[metric]['recall'], 
                      rouge_data[metric]['fmeasure']]
             labels = ['Precision', 'Recall', 'F1']
             
-            bars = axes[i].bar(labels, scores, color=colors[i], alpha=0.8, edgecolor='black', linewidth=0.5)
-            axes[i].set_title(f'{metric.upper()} Scores', fontweight='bold', pad=15)
-            axes[i].set_ylabel('Score', fontweight='bold')
-            axes[i].set_xlabel('Metric', fontweight='bold')
+            bars = axes[i].bar(labels, scores, color=colors[i], alpha=0.9, 
+                              edgecolor='black', linewidth=3.0)
+            axes[i].set_title(f'{metric.upper()} Scores', fontweight='bold', pad=30, fontsize=36)
+            axes[i].set_ylabel('Score', fontweight='bold', fontsize=32)
+            axes[i].set_xlabel('Metric', fontweight='bold', fontsize=32)
             axes[i].set_ylim(0, 1)
-            axes[i].grid(axis='y', alpha=0.3, linestyle='--')
+            axes[i].grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+            axes[i].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+            # Make tick labels bold
+            for label in axes[i].get_xticklabels() + axes[i].get_yticklabels():
+                label.set_fontweight('bold')
             
             # Add value labels with better formatting
             for j, (bar, score) in enumerate(zip(bars, scores)):
                 height = bar.get_height()
                 axes[i].text(bar.get_x() + bar.get_width()/2., height + 0.02,
                            f'{score:.3f}', ha='center', va='bottom', 
-                           fontweight='bold', fontsize=9)
-            
-            # Improve tick labels
-            axes[i].tick_params(axis='both', which='major', labelsize=9)
+                           fontweight='bold', fontsize=28)
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/rouge_scores.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/rouge_scores.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
         
         # Also create a combined ROUGE F1 comparison plot
-        fig, ax = plt.subplots(figsize=(8, 5))
+        fig, ax = plt.subplots(figsize=(16, 10), facecolor='white')
+        ax.set_facecolor('white')
         f1_scores = [rouge_data[metric]['fmeasure'] for metric in metrics]
         metric_labels = ['ROUGE-1', 'ROUGE-2', 'ROUGE-L']
         
-        bars = ax.bar(metric_labels, f1_scores, color=colors, alpha=0.8, 
-                     edgecolor='black', linewidth=0.5)
-        ax.set_title('ROUGE F1 Score Comparison', fontweight='bold', pad=20)
-        ax.set_ylabel('F1 Score', fontweight='bold')
-        ax.set_xlabel('ROUGE Metric', fontweight='bold')
+        bars = ax.bar(metric_labels, f1_scores, color=colors, alpha=0.9, 
+                     edgecolor='black', linewidth=3.0)
+        ax.set_title('ROUGE F1 Score Comparison', fontweight='bold', pad=35, fontsize=40)
+        ax.set_ylabel('F1 Score', fontweight='bold', fontsize=36)
+        ax.set_xlabel('ROUGE Metric', fontweight='bold', fontsize=36)
         ax.set_ylim(0, max(f1_scores) * 1.2)
-        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+        ax.tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontweight('bold')
         
         # Add value labels
         for bar, score in zip(bars, f1_scores):
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height + 0.01,
                    f'{score:.3f}', ha='center', va='bottom', 
-                   fontweight='bold', fontsize=10)
+                   fontweight='bold', fontsize=32)
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/rouge_f1_comparison.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/rouge_f1_comparison.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_bertscore_distribution(self):
-        """Plot BERTScore distribution with academic formatting."""
+        """Plot BERTScore distribution with large fonts for maximum visibility."""
         bertscore_data = self.metrics['bertscore']
         
-        # Create figure suitable for 2-column layout
-        fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+        # Create figure suitable for 2-column layout with larger size and white background
+        fig, axes = plt.subplots(1, 3, figsize=(24, 8), facecolor='white')
         metrics = ['precision', 'recall', 'f1']
-        colors = ['#2E86AB', '#A23B72', '#F18F01']
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c']  # Professional blue, orange, green
         
         for i, metric in enumerate(metrics):
-            mean_val = bertscore_data[metric]
-            std_val = bertscore_data[f'{metric}_std']
+            # Set white background for each subplot
+            axes[i].set_facecolor('white')
+            
+            # Handle both list and scalar values
+            metric_value = bertscore_data[metric]
+            if isinstance(metric_value, list):
+                mean_val = np.mean(metric_value)
+                std_val = np.std(metric_value)
+            else:
+                mean_val = metric_value
+                std_val = bertscore_data.get(f'{metric}_std', 0.1)  # Default std if not available
             
             # Create a normal distribution approximation
             x = np.linspace(mean_val - 3*std_val, mean_val + 3*std_val, 100)
             y = (1/(std_val * np.sqrt(2*np.pi))) * np.exp(-0.5*((x-mean_val)/std_val)**2)
             
-            axes[i].plot(x, y, linewidth=2, color=colors[i], alpha=0.8)
-            axes[i].fill_between(x, y, alpha=0.3, color=colors[i])
-            axes[i].axvline(mean_val, color='red', linestyle='--', alpha=0.8, linewidth=1.5)
-            axes[i].set_title(f'BERTScore {metric.capitalize()}', fontweight='bold', pad=15)
-            axes[i].set_xlabel('Score', fontweight='bold')
-            axes[i].set_ylabel('Density', fontweight='bold')
-            axes[i].grid(alpha=0.3, linestyle='--')
-            axes[i].tick_params(axis='both', which='major', labelsize=9)
+            axes[i].plot(x, y, linewidth=4.0, color=colors[i], alpha=0.9)
+            axes[i].fill_between(x, y, alpha=0.4, color=colors[i])
+            axes[i].axvline(mean_val, color='red', linestyle='--', alpha=0.9, linewidth=3.0)
+            axes[i].set_title(f'BERTScore {metric.capitalize()}', fontweight='bold', pad=30, fontsize=36)
+            axes[i].set_xlabel('Score', fontweight='bold', fontsize=32)
+            axes[i].set_ylabel('Density', fontweight='bold', fontsize=32)
+            axes[i].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+            axes[i].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+            # Make tick labels bold
+            for label in axes[i].get_xticklabels() + axes[i].get_yticklabels():
+                label.set_fontweight('bold')
             
             # Add mean value annotation
             axes[i].text(0.02, 0.98, f'Mean: {mean_val:.3f}\nStd: {std_val:.3f}', 
-                        transform=axes[i].transAxes, verticalalignment='top',
-                        bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+                        transform=axes[i].transAxes, verticalalignment='top', fontsize=28,
+                        bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, edgecolor='black', linewidth=2.0))
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/bertscore_distribution.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/bertscore_distribution.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
         
         # Also create a combined BERTScore comparison plot
-        fig, ax = plt.subplots(figsize=(8, 5))
-        metric_values = [bertscore_data[metric] for metric in metrics]
+        fig, ax = plt.subplots(figsize=(16, 10), facecolor='white')
+        ax.set_facecolor('white')
+        metric_values = []
+        for metric in metrics:
+            metric_value = bertscore_data[metric]
+            if isinstance(metric_value, list):
+                metric_values.append(np.mean(metric_value))
+            else:
+                metric_values.append(metric_value)
         metric_labels = ['Precision', 'Recall', 'F1']
         
-        bars = ax.bar(metric_labels, metric_values, color=colors, alpha=0.8, 
-                     edgecolor='black', linewidth=0.5)
-        ax.set_title('BERTScore Metrics Comparison', fontweight='bold', pad=20)
-        ax.set_ylabel('Score', fontweight='bold')
-        ax.set_xlabel('Metric', fontweight='bold')
+        bars = ax.bar(metric_labels, metric_values, color=colors, alpha=0.9, 
+                     edgecolor='black', linewidth=3.0)
+        ax.set_title('BERTScore Metrics Comparison', fontweight='bold', pad=35, fontsize=40)
+        ax.set_ylabel('Score', fontweight='bold', fontsize=36)
+        ax.set_xlabel('Metric', fontweight='bold', fontsize=36)
         ax.set_ylim(0, max(metric_values) * 1.1)
-        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+        ax.tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontweight('bold')
         
         # Add value labels
         for bar, value in zip(bars, metric_values):
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height + 0.01,
                    f'{value:.3f}', ha='center', va='bottom', 
-                   fontweight='bold', fontsize=10)
+                   fontweight='bold', fontsize=32)
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/bertscore_comparison.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/bertscore_comparison.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_length_analysis(self):
-        """Plot length analysis."""
+        """Plot length analysis with large fonts for maximum visibility."""
         length_data = self.metrics['length_metrics']
         
-        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        # Create figure suitable for 2-column layout with larger size and white background
+        fig, axes = plt.subplots(2, 2, figsize=(20, 16), facecolor='white')
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']  # Professional colors
+        
+        # Set white background for all subplots
+        for ax in axes.flat:
+            ax.set_facecolor('white')
         
         # Length distributions
         pred_lengths = [len(pred.split()) for pred in self.raw_data['predictions']]
         ref_lengths = [len(ref.split()) for ref in self.raw_data['references']]
         
-        axes[0, 0].hist(pred_lengths, bins=30, alpha=0.7, label='Predictions', color='#FF6B6B')
-        axes[0, 0].hist(ref_lengths, bins=30, alpha=0.7, label='References', color='#4ECDC4')
-        axes[0, 0].set_title('Length Distribution')
-        axes[0, 0].set_xlabel('Number of Words')
-        axes[0, 0].set_ylabel('Frequency')
-        axes[0, 0].legend()
+        axes[0, 0].hist(pred_lengths, bins=30, alpha=0.7, label='Predictions', color=colors[0], 
+                       edgecolor='black', linewidth=2.0)
+        axes[0, 0].hist(ref_lengths, bins=30, alpha=0.7, label='References', color=colors[1], 
+                       edgecolor='black', linewidth=2.0)
+        axes[0, 0].set_title('Length Distribution', fontweight='bold', pad=25, fontsize=36)
+        axes[0, 0].set_xlabel('Number of Words', fontweight='bold', fontsize=32)
+        axes[0, 0].set_ylabel('Frequency', fontweight='bold', fontsize=32)
+        axes[0, 0].legend(fontsize=28)
+        axes[0, 0].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[0, 0].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[0, 0].get_xticklabels() + axes[0, 0].get_yticklabels():
+            label.set_fontweight('bold')
         
         # Length ratio
         length_ratios = [p/r if r > 0 else 0 for p, r in zip(pred_lengths, ref_lengths)]
-        axes[0, 1].hist(length_ratios, bins=30, alpha=0.7, color='#45B7D1')
-        axes[0, 1].axvline(np.mean(length_ratios), color='red', linestyle='--', alpha=0.7)
-        axes[0, 1].set_title('Length Ratio Distribution')
-        axes[0, 1].set_xlabel('Prediction/Reference Length Ratio')
-        axes[0, 1].set_ylabel('Frequency')
+        axes[0, 1].hist(length_ratios, bins=30, alpha=0.7, color=colors[2], edgecolor='black', linewidth=2.0)
+        axes[0, 1].axvline(np.mean(length_ratios), color='red', linestyle='--', alpha=0.8, linewidth=3.0)
+        axes[0, 1].set_title('Length Ratio Distribution', fontweight='bold', pad=25, fontsize=36)
+        axes[0, 1].set_xlabel('Prediction/Reference Length Ratio', fontweight='bold', fontsize=32)
+        axes[0, 1].set_ylabel('Frequency', fontweight='bold', fontsize=32)
+        axes[0, 1].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[0, 1].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[0, 1].get_xticklabels() + axes[0, 1].get_yticklabels():
+            label.set_fontweight('bold')
         
         # Scatter plot
-        axes[1, 0].scatter(ref_lengths, pred_lengths, alpha=0.6, color='#FF6B6B')
-        axes[1, 0].plot([0, max(ref_lengths)], [0, max(ref_lengths)], 'r--', alpha=0.7)
-        axes[1, 0].set_title('Prediction vs Reference Length')
-        axes[1, 0].set_xlabel('Reference Length')
-        axes[1, 0].set_ylabel('Prediction Length')
+        axes[1, 0].scatter(ref_lengths, pred_lengths, alpha=0.6, color=colors[3], s=80)
+        axes[1, 0].plot([0, max(ref_lengths)], [0, max(ref_lengths)], 'r--', alpha=0.8, linewidth=3.0)
+        axes[1, 0].set_title('Prediction vs Reference Length', fontweight='bold', pad=25, fontsize=36)
+        axes[1, 0].set_xlabel('Reference Length', fontweight='bold', fontsize=32)
+        axes[1, 0].set_ylabel('Prediction Length', fontweight='bold', fontsize=32)
+        axes[1, 0].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[1, 0].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[1, 0].get_xticklabels() + axes[1, 0].get_yticklabels():
+            label.set_fontweight('bold')
         
         # Summary statistics
         stats_text = f"""
@@ -494,22 +562,23 @@ class ComprehensiveEvaluator:
         Std: {length_data['length_ratio_std']:.2f}
         """
         axes[1, 1].text(0.1, 0.5, stats_text, transform=axes[1, 1].transAxes, 
-                       fontsize=10, verticalalignment='center')
-        axes[1, 1].set_title('Length Statistics')
+                       fontsize=28, verticalalignment='center', fontweight='bold')
+        axes[1, 1].set_title('Length Statistics', fontweight='bold', pad=25, fontsize=36)
         axes[1, 1].axis('off')
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/length_analysis.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/length_analysis.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_semantic_similarity(self):
-        """Plot semantic similarity distribution."""
+        """Plot semantic similarity distribution with large fonts for maximum visibility."""
         if 'semantic_similarity' not in self.metrics:
             return
             
         semantic_data = self.metrics['semantic_similarity']
         
-        plt.figure(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(16, 10), facecolor='white')
+        ax.set_facecolor('white')
         
         # Create a normal distribution approximation
         mean_val = semantic_data['cosine_similarity_mean']
@@ -518,28 +587,34 @@ class ComprehensiveEvaluator:
         x = np.linspace(mean_val - 3*std_val, mean_val + 3*std_val, 100)
         y = (1/(std_val * np.sqrt(2*np.pi))) * np.exp(-0.5*((x-mean_val)/std_val)**2)
         
-        plt.plot(x, y, linewidth=2, color='#FF6B6B')
-        plt.fill_between(x, y, alpha=0.3, color='#FF6B6B')
-        plt.axvline(mean_val, color='red', linestyle='--', alpha=0.7, label=f'Mean: {mean_val:.3f}')
+        ax.plot(x, y, linewidth=4.0, color='#1f77b4', alpha=0.9)
+        ax.fill_between(x, y, alpha=0.4, color='#1f77b4')
+        ax.axvline(mean_val, color='red', linestyle='--', alpha=0.9, linewidth=3.0, 
+                   label=f'Mean: {mean_val:.3f}')
         
-        plt.title('Semantic Similarity Distribution')
-        plt.xlabel('Cosine Similarity')
-        plt.ylabel('Density')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        ax.set_title('Semantic Similarity Distribution', fontweight='bold', pad=30, fontsize=40)
+        ax.set_xlabel('Cosine Similarity', fontweight='bold', fontsize=36)
+        ax.set_ylabel('Density', fontweight='bold', fontsize=36)
+        ax.legend(fontsize=32)
+        ax.grid(True, alpha=0.6, linestyle='--', linewidth=1.5)
+        ax.tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontweight('bold')
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/semantic_similarity.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/semantic_similarity.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_bleu_distribution(self):
-        """Plot BLEU score distribution."""
+        """Plot BLEU score distribution with large fonts for maximum visibility."""
         if 'bleu' not in self.metrics:
             return
             
         bleu_data = self.metrics['bleu']
         
-        plt.figure(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(16, 10), facecolor='white')
+        ax.set_facecolor('white')
         
         # Create a normal distribution approximation
         mean_val = bleu_data['bleu_mean']
@@ -548,23 +623,33 @@ class ComprehensiveEvaluator:
         x = np.linspace(mean_val - 3*std_val, mean_val + 3*std_val, 100)
         y = (1/(std_val * np.sqrt(2*np.pi))) * np.exp(-0.5*((x-mean_val)/std_val)**2)
         
-        plt.plot(x, y, linewidth=2, color='#4ECDC4')
-        plt.fill_between(x, y, alpha=0.3, color='#4ECDC4')
-        plt.axvline(mean_val, color='red', linestyle='--', alpha=0.7, label=f'Mean: {mean_val:.3f}')
+        ax.plot(x, y, linewidth=4.0, color='#2ca02c', alpha=0.9)
+        ax.fill_between(x, y, alpha=0.4, color='#2ca02c')
+        ax.axvline(mean_val, color='red', linestyle='--', alpha=0.9, linewidth=3.0, 
+                   label=f'Mean: {mean_val:.3f}')
         
-        plt.title('BLEU Score Distribution')
-        plt.xlabel('BLEU Score')
-        plt.ylabel('Density')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        ax.set_title('BLEU Score Distribution', fontweight='bold', pad=30, fontsize=40)
+        ax.set_xlabel('BLEU Score', fontweight='bold', fontsize=36)
+        ax.set_ylabel('Density', fontweight='bold', fontsize=36)
+        ax.legend(fontsize=32)
+        ax.grid(True, alpha=0.6, linestyle='--', linewidth=1.5)
+        ax.tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontweight('bold')
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/bleu_distribution.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/bleu_distribution.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_summary_quality_analysis(self, predictions, references):
-        """Plot summary quality analysis."""
-        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        """Plot summary quality analysis with large fonts for maximum visibility."""
+        fig, axes = plt.subplots(2, 2, figsize=(24, 18), facecolor='white')
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']  # Professional colors
+        
+        # Set white background for all subplots
+        for ax in axes.flat:
+            ax.set_facecolor('white')
         
         # Quality scores (simplified)
         quality_scores = []
@@ -577,17 +662,27 @@ class ComprehensiveEvaluator:
             quality_scores.append(overlap / total)
         
         # Quality distribution
-        axes[0, 0].hist(quality_scores, bins=30, alpha=0.7, color='#FF6B6B')
-        axes[0, 0].set_title('Summary Quality Distribution')
-        axes[0, 0].set_xlabel('Quality Score')
-        axes[0, 0].set_ylabel('Frequency')
+        axes[0, 0].hist(quality_scores, bins=30, alpha=0.7, color=colors[0], edgecolor='black', linewidth=2.0)
+        axes[0, 0].set_title('Summary Quality Distribution', fontweight='bold', pad=25, fontsize=36)
+        axes[0, 0].set_xlabel('Quality Score', fontweight='bold', fontsize=32)
+        axes[0, 0].set_ylabel('Frequency', fontweight='bold', fontsize=32)
+        axes[0, 0].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[0, 0].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[0, 0].get_xticklabels() + axes[0, 0].get_yticklabels():
+            label.set_fontweight('bold')
         
         # Quality vs Length
         pred_lengths = [len(pred.split()) for pred in predictions]
-        axes[0, 1].scatter(pred_lengths, quality_scores, alpha=0.6, color='#4ECDC4')
-        axes[0, 1].set_title('Quality vs Prediction Length')
-        axes[0, 1].set_xlabel('Prediction Length')
-        axes[0, 1].set_ylabel('Quality Score')
+        axes[0, 1].scatter(pred_lengths, quality_scores, alpha=0.6, color=colors[1], s=80)
+        axes[0, 1].set_title('Quality vs Prediction Length', fontweight='bold', pad=25, fontsize=36)
+        axes[0, 1].set_xlabel('Prediction Length', fontweight='bold', fontsize=32)
+        axes[0, 1].set_ylabel('Quality Score', fontweight='bold', fontsize=32)
+        axes[0, 1].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[0, 1].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[0, 1].get_xticklabels() + axes[0, 1].get_yticklabels():
+            label.set_fontweight('bold')
         
         # Top and bottom summaries
         sorted_indices = np.argsort(quality_scores)
@@ -596,20 +691,42 @@ class ComprehensiveEvaluator:
         
         # Top summaries
         top_scores = [quality_scores[i] for i in top_indices]
-        axes[1, 0].bar(range(5), top_scores, color='#45B7D1')
-        axes[1, 0].set_title('Top 5 Quality Scores')
-        axes[1, 0].set_xlabel('Rank')
-        axes[1, 0].set_ylabel('Quality Score')
+        bars1 = axes[1, 0].bar(range(5), top_scores, color=colors[2], alpha=0.8, edgecolor='black', linewidth=2.0)
+        axes[1, 0].set_title('Top 5 Quality Scores', fontweight='bold', pad=25, fontsize=36)
+        axes[1, 0].set_xlabel('Rank', fontweight='bold', fontsize=32)
+        axes[1, 0].set_ylabel('Quality Score', fontweight='bold', fontsize=32)
+        axes[1, 0].grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[1, 0].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[1, 0].get_xticklabels() + axes[1, 0].get_yticklabels():
+            label.set_fontweight('bold')
+        
+        # Add value labels for top scores
+        for bar, score in zip(bars1, top_scores):
+            height = bar.get_height()
+            axes[1, 0].text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                           f'{score:.3f}', ha='center', va='bottom', fontweight='bold', fontsize=28)
         
         # Bottom summaries
         bottom_scores = [quality_scores[i] for i in bottom_indices]
-        axes[1, 1].bar(range(5), bottom_scores, color='#FF6B6B')
-        axes[1, 1].set_title('Bottom 5 Quality Scores')
-        axes[1, 1].set_xlabel('Rank')
-        axes[1, 1].set_ylabel('Quality Score')
+        bars2 = axes[1, 1].bar(range(5), bottom_scores, color=colors[3], alpha=0.8, edgecolor='black', linewidth=2.0)
+        axes[1, 1].set_title('Bottom 5 Quality Scores', fontweight='bold', pad=25, fontsize=36)
+        axes[1, 1].set_xlabel('Rank', fontweight='bold', fontsize=32)
+        axes[1, 1].set_ylabel('Quality Score', fontweight='bold', fontsize=32)
+        axes[1, 1].grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[1, 1].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[1, 1].get_xticklabels() + axes[1, 1].get_yticklabels():
+            label.set_fontweight('bold')
+        
+        # Add value labels for bottom scores
+        for bar, score in zip(bars2, bottom_scores):
+            height = bar.get_height()
+            axes[1, 1].text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                           f'{score:.3f}', ha='center', va='bottom', fontweight='bold', fontsize=28)
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/summary_quality_analysis.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/summary_quality_analysis.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_word_cloud_analysis(self, predictions, references):
@@ -620,7 +737,11 @@ class ComprehensiveEvaluator:
             logging.warning("WordCloud not available, skipping word cloud analysis")
             return
         
-        fig, axes = plt.subplots(1, 2, figsize=(15, 8))
+        fig, axes = plt.subplots(1, 2, figsize=(15, 8), facecolor='white')
+        
+        # Set white background for all subplots
+        for ax in axes:
+            ax.set_facecolor('white')
         
         # Combine all predictions and references
         all_predictions = ' '.join(predictions)
@@ -631,15 +752,15 @@ class ComprehensiveEvaluator:
         wordcloud_ref = WordCloud(width=800, height=400, background_color='white').generate(all_references)
         
         axes[0].imshow(wordcloud_pred, interpolation='bilinear')
-        axes[0].set_title('Prediction Word Cloud')
+        axes[0].set_title('Prediction Word Cloud', fontsize=32, fontweight='bold', pad=20)
         axes[0].axis('off')
         
         axes[1].imshow(wordcloud_ref, interpolation='bilinear')
-        axes[1].set_title('Reference Word Cloud')
+        axes[1].set_title('Reference Word Cloud', fontsize=32, fontweight='bold', pad=20)
         axes[1].axis('off')
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/word_cloud_analysis.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/word_cloud_analysis.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_correlation_matrix(self):
@@ -663,15 +784,22 @@ class ComprehensiveEvaluator:
         corr_matrix = np.array([[1.0 if i == j else 0.5 for j in range(len(metric_names))] 
                                for i in range(len(metric_names))])
         
-        plt.figure(figsize=(10, 8))
+        fig, ax = plt.subplots(figsize=(12, 10), facecolor='white')
+        ax.set_facecolor('white')
+        
         sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', center=0,
-                   xticklabels=metric_names, yticklabels=metric_names)
-        plt.title('Metrics Correlation Matrix')
+                   xticklabels=metric_names, yticklabels=metric_names, ax=ax,
+                   annot_kws={'fontsize': 20})
+        ax.set_title('Metrics Correlation Matrix', fontsize=36, fontweight='bold', pad=30)
+        ax.tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_fontweight('bold')
         plt.xticks(rotation=45, ha='right')
         plt.yticks(rotation=0)
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/correlation_matrix.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/correlation_matrix.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
     def _plot_performance_by_length(self, predictions, references):
@@ -699,20 +827,38 @@ class ComprehensiveEvaluator:
                     bin_metrics[bin_labels[i]] = rouge_scores['rouge1']['fmeasure']
         
         if bin_metrics:
-            plt.figure(figsize=(10, 6))
-            plt.bar(list(bin_metrics.keys()), list(bin_metrics.values()), color='#FF6B6B')
-            plt.title('ROUGE-1 F1 Score by Prediction Length')
-            plt.xlabel('Length Bin (words)')
-            plt.ylabel('ROUGE-1 F1 Score')
+            fig, ax = plt.subplots(figsize=(12, 8), facecolor='white')
+            ax.set_facecolor('white')
+            
+            bars = ax.bar(list(bin_metrics.keys()), list(bin_metrics.values()), color='#FF6B6B', alpha=0.8, edgecolor='black', linewidth=2.0)
+            ax.set_title('ROUGE-1 F1 Score by Prediction Length', fontsize=36, fontweight='bold', pad=30)
+            ax.set_xlabel('Length Bin (words)', fontsize=32, fontweight='bold')
+            ax.set_ylabel('ROUGE-1 F1 Score', fontsize=32, fontweight='bold')
+            ax.tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+            # Make tick labels bold
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontweight('bold')
+            ax.grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
             plt.xticks(rotation=45)
             
+            # Add value labels on bars
+            for bar, value in zip(bars, bin_metrics.values()):
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                       f'{value:.3f}', ha='center', va='bottom', 
+                       fontweight='bold', fontsize=24)
+            
             plt.tight_layout()
-            plt.savefig(f"{self.plots_dir}/performance_by_length.png", dpi=300, bbox_inches='tight')
+            plt.savefig(f"{self.plots_dir}/performance_by_length.png", dpi=300, bbox_inches='tight', facecolor='white')
             plt.close()
     
     def _plot_error_analysis(self, predictions, references, narratives=None):
         """Plot error analysis."""
-        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12), facecolor='white')
+        
+        # Set white background for all subplots
+        for ax in axes.flat:
+            ax.set_facecolor('white')
         
         # Calculate error scores
         error_scores = []
@@ -725,25 +871,47 @@ class ComprehensiveEvaluator:
             error_scores.append(error_score)
         
         # Error distribution
-        axes[0, 0].hist(error_scores, bins=30, alpha=0.7, color='#FF6B6B')
-        axes[0, 0].set_title('Error Score Distribution')
-        axes[0, 0].set_xlabel('Error Score')
-        axes[0, 0].set_ylabel('Frequency')
+        axes[0, 0].hist(error_scores, bins=30, alpha=0.7, color='#FF6B6B', edgecolor='black', linewidth=2.0)
+        axes[0, 0].set_title('Error Score Distribution', fontsize=32, fontweight='bold', pad=25)
+        axes[0, 0].set_xlabel('Error Score', fontsize=28, fontweight='bold')
+        axes[0, 0].set_ylabel('Frequency', fontsize=28, fontweight='bold')
+        axes[0, 0].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[0, 0].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[0, 0].get_xticklabels() + axes[0, 0].get_yticklabels():
+            label.set_fontweight('bold')
         
         # Error vs length
         pred_lengths = [len(pred.split()) for pred in predictions]
-        axes[0, 1].scatter(pred_lengths, error_scores, alpha=0.6, color='#4ECDC4')
-        axes[0, 1].set_title('Error Score vs Prediction Length')
-        axes[0, 1].set_xlabel('Prediction Length')
-        axes[0, 1].set_ylabel('Error Score')
+        axes[0, 1].scatter(pred_lengths, error_scores, alpha=0.6, color='#4ECDC4', s=80)
+        axes[0, 1].set_title('Error Score vs Prediction Length', fontsize=32, fontweight='bold', pad=25)
+        axes[0, 1].set_xlabel('Prediction Length', fontsize=28, fontweight='bold')
+        axes[0, 1].set_ylabel('Error Score', fontsize=28, fontweight='bold')
+        axes[0, 1].grid(alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[0, 1].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[0, 1].get_xticklabels() + axes[0, 1].get_yticklabels():
+            label.set_fontweight('bold')
         
         # Worst predictions
         worst_indices = np.argsort(error_scores)[-5:]
         worst_scores = [error_scores[i] for i in worst_indices]
-        axes[1, 0].bar(range(5), worst_scores, color='#FF6B6B')
-        axes[1, 0].set_title('Worst 5 Predictions (Error Score)')
-        axes[1, 0].set_xlabel('Rank')
-        axes[1, 0].set_ylabel('Error Score')
+        bars = axes[1, 0].bar(range(5), worst_scores, color='#FF6B6B', alpha=0.8, edgecolor='black', linewidth=2.0)
+        axes[1, 0].set_title('Worst 5 Predictions (Error Score)', fontsize=32, fontweight='bold', pad=25)
+        axes[1, 0].set_xlabel('Rank', fontsize=28, fontweight='bold')
+        axes[1, 0].set_ylabel('Error Score', fontsize=28, fontweight='bold')
+        axes[1, 0].grid(axis='y', alpha=0.6, linestyle='--', linewidth=1.5)
+        axes[1, 0].tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+        # Make tick labels bold
+        for label in axes[1, 0].get_xticklabels() + axes[1, 0].get_yticklabels():
+            label.set_fontweight('bold')
+        
+        # Add value labels on bars
+        for bar, score in zip(bars, worst_scores):
+            height = bar.get_height()
+            axes[1, 0].text(bar.get_x() + bar.get_width()/2., height + 0.01,
+                           f'{score:.3f}', ha='center', va='bottom', 
+                           fontweight='bold', fontsize=20)
         
         # Error categories
         error_categories = {
@@ -754,13 +922,28 @@ class ComprehensiveEvaluator:
             'Very High Error (>0.8)': len([e for e in error_scores if e >= 0.8])
         }
         
-        axes[1, 1].pie(error_categories.values(), labels=error_categories.keys(), autopct='%1.1f%%')
-        axes[1, 1].set_title('Error Score Distribution')
+        wedges, texts, autotexts = axes[1, 1].pie(error_categories.values(), labels=error_categories.keys(), 
+                                                  autopct='%1.1f%%', textprops={'fontsize': 20})
+        axes[1, 1].set_title('Error Score Distribution', fontsize=32, fontweight='bold', pad=25)
         
         plt.tight_layout()
-        plt.savefig(f"{self.plots_dir}/error_analysis.png", dpi=300, bbox_inches='tight')
+        plt.savefig(f"{self.plots_dir}/error_analysis.png", dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
     
+    def _convert_numpy_types(self, obj):
+        """Convert numpy types to native Python types for JSON serialization."""
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, dict):
+            return {key: self._convert_numpy_types(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_numpy_types(item) for item in obj]
+        return obj
+
     def save_raw_data(self):
         """Save all raw data for future use."""
         logging.info("💾 Saving raw data...")
@@ -768,30 +951,68 @@ class ComprehensiveEvaluator:
         # Save predictions and references
         raw_data_file = f"{self.raw_data_dir}/evaluation_data.json"
         with open(raw_data_file, 'w') as f:
-            json.dump(self.raw_data, f, indent=2)
+            serializable_raw_data = self._convert_numpy_types(self.raw_data)
+            json.dump(serializable_raw_data, f, indent=2)
         
         # Save metrics
         metrics_file = f"{self.metrics_dir}/comprehensive_metrics.json"
         with open(metrics_file, 'w') as f:
-            json.dump(self.metrics, f, indent=2)
+            serializable_metrics = self._convert_numpy_types(self.metrics)
+            json.dump(serializable_metrics, f, indent=2)
         
         # Save summary statistics
         summary_file = f"{self.metrics_dir}/summary_statistics.txt"
         with open(summary_file, 'w') as f:
             f.write("CRASHTRANSFORMER EVALUATION SUMMARY\n")
-            f.write("=" * 50 + "\n\n")
+            f.write("=" * 60 + "\n\n")
             
+            # Add dataset information
+            if 'predictions' in self.raw_data:
+                f.write(f"DATASET INFORMATION:\n")
+                f.write("-" * 25 + "\n")
+                f.write(f"  Number of samples: {len(self.raw_data['predictions'])}\n")
+                f.write(f"  Evaluation timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            
+            # Add metrics
             for metric_type, metrics in self.metrics.items():
                 f.write(f"{metric_type.upper()} METRICS:\n")
-                f.write("-" * 20 + "\n")
+                f.write("-" * 25 + "\n")
                 for metric_name, value in metrics.items():
                     if isinstance(value, dict):
                         f.write(f"  {metric_name}:\n")
                         for sub_name, sub_value in value.items():
-                            f.write(f"    {sub_name}: {sub_value:.4f}\n")
+                            if isinstance(sub_value, (int, float)):
+                                f.write(f"    {sub_name}: {sub_value:.4f}\n")
+                            else:
+                                f.write(f"    {sub_name}: {sub_value}\n")
                     else:
-                        f.write(f"  {metric_name}: {value:.4f}\n")
+                        if isinstance(value, (int, float)):
+                            f.write(f"  {metric_name}: {value:.4f}\n")
+                        else:
+                            f.write(f"  {metric_name}: {value}\n")
                 f.write("\n")
+            
+            # Add performance summary
+            f.write("PERFORMANCE SUMMARY:\n")
+            f.write("-" * 25 + "\n")
+            if 'rouge' in self.metrics:
+                rouge_f1_scores = []
+                for metric in ['rouge1', 'rouge2', 'rougeL']:
+                    if metric in self.metrics['rouge']:
+                        rouge_f1_scores.append(self.metrics['rouge'][metric]['fmeasure'])
+                if rouge_f1_scores:
+                    f.write(f"  Average ROUGE F1: {np.mean(rouge_f1_scores):.4f}\n")
+                    f.write(f"  Best ROUGE F1: {max(rouge_f1_scores):.4f}\n")
+            
+            if 'bertscore' in self.metrics and 'f1' in self.metrics['bertscore']:
+                f1_value = self.metrics['bertscore']['f1']
+                if isinstance(f1_value, list):
+                    f1_mean = np.mean(f1_value)
+                    f.write(f"  BERTScore F1: {f1_mean:.4f}\n")
+                else:
+                    f.write(f"  BERTScore F1: {f1_value:.4f}\n")
+            
+            f.write("\n")
         
         logging.info("✅ Raw data saved")
     

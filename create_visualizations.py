@@ -89,6 +89,38 @@ def create_basic_visualizations(data, results_dir):
         import matplotlib.pyplot as plt
         import seaborn as sns
         
+        # Setup academic plotting style with white backgrounds and large fonts
+        plt.rcParams.update({
+            'font.family': 'Times New Roman',
+            'font.size': 28,
+            'axes.titlesize': 36,
+            'axes.labelsize': 32,
+            'xtick.labelsize': 36,  # Increased significantly for better visibility
+            'ytick.labelsize': 36,  # Increased significantly for better visibility
+            'legend.fontsize': 28,
+            'figure.titlesize': 40,
+            'figure.dpi': 300,
+            'savefig.dpi': 300,
+            'savefig.bbox': 'tight',
+            'savefig.pad_inches': 0.4,
+            'lines.linewidth': 3.0,
+            'axes.linewidth': 2.0,
+            'grid.linewidth': 1.5,
+            'grid.alpha': 0.6,
+            'axes.edgecolor': 'black',
+            'axes.spines.top': True,
+            'axes.spines.right': True,
+            'axes.spines.bottom': True,
+            'axes.spines.left': True,
+            # White background settings
+            'figure.facecolor': 'white',
+            'axes.facecolor': 'white',
+            'savefig.facecolor': 'white'
+        })
+        
+        # Use default style for white background
+        plt.style.use('default')
+        
         # Create plots directory
         plots_dir = f"{results_dir}/plots"
         os.makedirs(plots_dir, exist_ok=True)
@@ -97,7 +129,9 @@ def create_basic_visualizations(data, results_dir):
         if 'metrics' in data and 'rouge' in data['metrics']:
             rouge_data = data['metrics']['rouge']
             
-            plt.figure(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(12, 8), facecolor='white')
+            ax.set_facecolor('white')
+            
             metrics = ['rouge1', 'rouge2', 'rougeL']
             scores = []
             labels = []
@@ -112,20 +146,26 @@ def create_basic_visualizations(data, results_dir):
                         labels.append(metric.upper())
             
             if scores:
-                plt.bar(labels, scores, color=['#FF6B6B', '#4ECDC4', '#45B7D1'])
-                plt.title("ROUGE Scores", fontsize=16, fontweight="bold")
-                plt.ylabel("F1 Score", fontsize=14)
-                plt.xlabel("Metric", fontsize=14)
-                plt.ylim(0, 1)
-                plt.grid(axis="y", alpha=0.3)
+                bars = ax.bar(labels, scores, color=['#FF6B6B', '#4ECDC4', '#45B7D1'], 
+                             alpha=0.8, edgecolor='black', linewidth=2.0)
+                ax.set_title("ROUGE Scores", fontsize=40, fontweight="bold", pad=30)
+                ax.set_ylabel("F1 Score", fontsize=36, fontweight="bold")
+                ax.set_xlabel("Metric", fontsize=36, fontweight="bold")
+                ax.set_ylim(0, 1)
+                ax.grid(axis="y", alpha=0.6, linestyle='--', linewidth=1.5)
+                ax.tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+                # Make tick labels bold
+                for label in ax.get_xticklabels() + ax.get_yticklabels():
+                    label.set_fontweight('bold')
                 
                 # Add value labels
-                for i, score in enumerate(scores):
-                    plt.text(i, score + 0.01, f'{score:.3f}', 
-                           ha='center', va='bottom', fontweight='bold')
+                for i, (bar, score) in enumerate(zip(bars, scores)):
+                    height = bar.get_height()
+                    ax.text(bar.get_x() + bar.get_width()/2., height + 0.01, f'{score:.3f}', 
+                           ha='center', va='bottom', fontweight='bold', fontsize=28)
                 
                 plt.tight_layout()
-                plt.savefig(f"{plots_dir}/rouge_scores_basic.png", dpi=300, bbox_inches='tight')
+                plt.savefig(f"{plots_dir}/rouge_scores_basic.png", dpi=300, bbox_inches='tight', facecolor='white')
                 plt.close()
                 logging.info("✅ Created ROUGE scores plot")
         
@@ -133,22 +173,31 @@ def create_basic_visualizations(data, results_dir):
         if 'metrics' in data and 'training_time' in data['metrics']:
             training_time = data['metrics']['training_time']
             
-            plt.figure(figsize=(8, 6))
+            fig, ax = plt.subplots(figsize=(10, 8), facecolor='white')
+            ax.set_facecolor('white')
+            
             time_units = ['seconds', 'minutes', 'hours']
             time_values = [training_time.get(unit, 0) for unit in time_units]
             
-            plt.bar(time_units, time_values, color=['#FF6B6B', '#4ECDC4', '#45B7D1'])
-            plt.title("Training Time", fontsize=16, fontweight="bold")
-            plt.ylabel("Time", fontsize=14)
-            plt.xlabel("Unit", fontsize=14)
+            bars = ax.bar(time_units, time_values, color=['#FF6B6B', '#4ECDC4', '#45B7D1'], 
+                         alpha=0.8, edgecolor='black', linewidth=2.0)
+            ax.set_title("Training Time", fontsize=40, fontweight="bold", pad=30)
+            ax.set_ylabel("Time", fontsize=36, fontweight="bold")
+            ax.set_xlabel("Unit", fontsize=36, fontweight="bold")
+            ax.tick_params(axis='both', which='major', labelsize=36, width=3.0, length=10)
+            # Make tick labels bold
+            for label in ax.get_xticklabels() + ax.get_yticklabels():
+                label.set_fontweight('bold')
+            ax.grid(axis="y", alpha=0.6, linestyle='--', linewidth=1.5)
             
             # Add value labels
-            for i, value in enumerate(time_values):
-                plt.text(i, value + max(time_values) * 0.01, f'{value:.2f}', 
-                       ha='center', va='bottom', fontweight='bold')
+            for i, (bar, value) in enumerate(zip(bars, time_values)):
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height + max(time_values) * 0.01, f'{value:.2f}', 
+                       ha='center', va='bottom', fontweight='bold', fontsize=28)
             
             plt.tight_layout()
-            plt.savefig(f"{plots_dir}/training_time.png", dpi=300, bbox_inches='tight')
+            plt.savefig(f"{plots_dir}/training_time.png", dpi=300, bbox_inches='tight', facecolor='white')
             plt.close()
             logging.info("✅ Created training time plot")
         
@@ -164,7 +213,7 @@ def create_enhanced_visualizations(data, results_dir):
     logging.info("📈 Creating enhanced visualizations...")
     
     try:
-        from enhanced_evaluation import ComprehensiveEvaluator
+        from src.enhanced_evaluation import ComprehensiveEvaluator
         
         evaluator = ComprehensiveEvaluator(results_dir)
         
@@ -193,7 +242,7 @@ def create_cross_validation_visualizations(data, results_dir):
     logging.info("🔄 Creating cross-validation visualizations...")
     
     try:
-        from cross_validation_module import CrossValidator
+        from src.cross_validation_module import CrossValidator
         
         cv_dir = f"{results_dir}/cross_validation"
         cv_results_file = f"{cv_dir}/cv_results.json"

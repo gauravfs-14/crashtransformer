@@ -59,7 +59,7 @@ def main():
     
     # Check if enhanced evaluation is available
     try:
-        from enhanced_evaluation import ComprehensiveEvaluator
+        from src.enhanced_evaluation import ComprehensiveEvaluator
         ENHANCED_EVAL_AVAILABLE = True
         logger.info("✅ Enhanced evaluation module loaded")
     except ImportError as e:
@@ -69,7 +69,7 @@ def main():
     
     # Check if cross-validation is available
     try:
-        from cross_validation_module import CrossValidator
+        from src.cross_validation_module import CrossValidator
         CV_AVAILABLE = True
         logger.info("✅ Cross-validation module loaded")
     except ImportError as e:
@@ -119,6 +119,11 @@ def main():
     else:
         logger.info("📁 No existing generated summaries found")
         predictions = None
+    
+    # Initialize variables
+    predictions = None
+    references = None
+    narratives = None
     
     # Generate predictions if needed
     if predictions is None:
@@ -174,6 +179,10 @@ def main():
             return False
     
     # Run comprehensive evaluation
+    if predictions is None or references is None or narratives is None:
+        logger.error("❌ Missing predictions, references, or narratives")
+        return False
+        
     logger.info("📊 Running comprehensive evaluation...")
     try:
         evaluator = ComprehensiveEvaluator(args.results_dir)
@@ -194,6 +203,7 @@ def main():
     if args.cross_validation and CV_AVAILABLE:
         logger.info("🔄 Running cross-validation...")
         try:
+            from src.cross_validation_module import CrossValidator
             cv = CrossValidator(results_dir=args.results_dir)
             cv_results = cv.run_cross_validation(
                 narratives=causal_df["Narrative"].tolist(),
