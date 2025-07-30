@@ -311,7 +311,7 @@ from crash_transformer_pipeline import generate_causal_summaries_batch
 summaries = generate_causal_summaries_batch(narratives, batch_size=5)
 ```
 
-## 📝 Citation
+<!-- ## 📝 Citation
 
 If you use this pipeline in your research, please cite:
 
@@ -322,7 +322,7 @@ If you use this pipeline in your research, please cite:
   year={2024},
   url={https://github.com/yourusername/crashtransformer}
 }
-```
+``` -->
 
 ## 🤝 Contributing
 
