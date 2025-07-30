@@ -10,6 +10,9 @@ wheels/
 .venv
 logs/
 models/
-results/
 **.xlsx
 **.ipynb
+codes.txt
+writeup.tex
+study_design.png
+checkpoint**

@@ -1,0 +1,61 @@
+CRASHTRANSFORMER VISUALIZATION SUMMARY
+==================================================
+
+Generated on: 2025-07-27 21:40:10
+
+DATA SUMMARY:
+---------------
+Predictions: 100 samples
+References: 100 samples
+Narratives: 100 samples
+Causal Summaries: 3964 samples
+
+METRICS SUMMARY:
+---------------
+
+ROUGE:
+  rouge1:
+    precision: 0.52911303708352
+    recall: 0.35776122142351896
+    fmeasure: 0.39888422672127655
+  rouge2:
+    precision: 0.2865271652234403
+    recall: 0.20589410173363412
+    fmeasure: 0.22582591453440512
+  rougeL:
+    precision: 0.4299874023357275
+    recall: 0.2926239875250118
+    fmeasure: 0.3249841682840312
+
+BERTSCORE:
+  precision: 0.8881691098213196
+  recall: 0.8804103136062622
+  f1: 0.8840881586074829
+  precision_std: 0.05210260674357414
+  recall_std: 0.04700168967247009
+  f1_std: 0.04792129993438721
+
+TRAINING_TIME:
+  seconds: 1026.7518031597137
+  minutes: 17.112530052661896
+  hours: 0.2852088342110316
+
+AVAILABLE VISUALIZATIONS:
+-------------------------
+  - bertscore_comparison.png
+  - bertscore_distribution.png
+  - bleu_distribution.png
+  - correlation_matrix.png
+  - error_analysis.png
+  - length_analysis.png
+  - performance_by_length.png
+  - rouge_f1_comparison.png
+  - rouge_scores.png
+  - rouge_scores_basic.png
+  - semantic_similarity.png
+  - summary_quality_analysis.png
+  - training_time.png
+  - word_cloud_analysis.png
+
+CROSS-VALIDATION RESULTS:
+-------------------------
