@@ -16,3 +16,13 @@ codes.txt
 writeup.tex
 study_design.png
 checkpoint**
+archived/
+artifacts/
+.DS_Store
+docs_html/
+data/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

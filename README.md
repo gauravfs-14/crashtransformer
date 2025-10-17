@@ -1,343 +1,337 @@
-# CrashTransformer: Enhanced Crash Narrative Summarization Pipeline
+# 🔧 CrashTransformer - AI-Powered Crash Analysis Pipeline
 
-A comprehensive pipeline for generating causal summaries from crash narratives using advanced NLP techniques, including Ollama integration, comprehensive evaluation metrics, and cross-validation.
+CrashTransformer is a sophisticated AI system that processes vehicle crash narratives into structured causal summaries using Large Language Models and transformer-based summarization.
 
-## 🚀 Features
+## 🚀 Quick Start
 
-### Core Functionality
-- **Ollama Integration**: Uses Llama 3.1:8b model for causal summary generation
-- **BART Fine-tuning**: Trains a BART model for crash narrative summarization
-- **Comprehensive Evaluation**: Multiple evaluation metrics and visualizations
-- **Cross-Validation**: K-fold cross-validation for robust model evaluation
-- **Raw Data Storage**: All results saved for reproducibility and further analysis
+```bash
+# 1. Setup environment (first time only)
+python crashtransformer.py setup
 
-### Evaluation Metrics
-- **ROUGE Scores**: ROUGE-1, ROUGE-2, ROUGE-L (precision, recall, F1)
-- **BERTScore**: Semantic similarity using BERT embeddings
-- **BLEU Score**: N-gram overlap metrics
-- **Semantic Similarity**: Cosine similarity using sentence transformers
-- **Length Analysis**: Prediction vs reference length analysis
-- **Quality Metrics**: Custom quality scoring and error analysis
+# 2. Run the pipeline
+python crashtransformer.py run --csv crashes.csv
+```
 
-### Visualizations
-- **ROUGE Score Comparisons**: Bar plots and distributions
-- **BERTScore Distributions**: Statistical analysis of semantic similarity
-- **Length Analysis**: Histograms, scatter plots, and ratio analysis
-- **Word Cloud Analysis**: Most frequent words in predictions vs references
-- **Correlation Matrix**: Relationships between different metrics
-- **Performance by Length**: How model performance varies with text length
-- **Error Analysis**: Detailed analysis of prediction errors
-- **Cross-Validation Plots**: Fold performance comparisons and distributions
+## 📋 Main Commands
 
-## 📁 Project Structure
+| Command | Description | Example |
+|---------|-------------|---------|
+| `setup` | Interactive environment configuration | `python crashtransformer.py setup` |
+| `run` | Execute crash analysis pipeline | `python crashtransformer.py run --csv crashes.csv` |
+| `validate` | Validate current configuration | `python crashtransformer.py validate` |
+| `install` | Install required dependencies | `python crashtransformer.py install` |
+| `examples` | Show usage examples | `python crashtransformer.py examples` |
+| `help` | Show comprehensive help | `python crashtransformer.py help` |
+
+## 🎯 Features
+
+### **🤖 Multi-Provider LLM Support**
+
+- **OpenAI**: GPT-4o, GPT-4o-mini, GPT-3.5-turbo
+- **Anthropic**: Claude-3 Opus, Sonnet, Haiku
+- **Google**: Gemini-1.5-Pro, Gemini-1.5-Flash
+- **Groq**: Llama-3.1, Mixtral-8x7b (Fast inference)
+- **Ollama**: Local models (Llama3, Mistral, CodeLlama)
+- **XAI**: Grok-Beta, Grok-2
+
+### **📊 Advanced Analytics**
+
+- **Graph Extraction**: Structured entities, events, relationships
+- **Causal Summarization**: Plan-conditioned summary generation
+- **Quality Metrics**: Precision, recall, faithfulness, hallucination rates
+- **Cost Tracking**: Token usage, runtime, monetary costs
+- **Performance Analytics**: Processing times, throughput analysis
+
+### **🗄️ Data Storage**
+
+- **File Outputs**: JSON, JSONL, CSV formats
+- **Graph Database**: Neo4j integration for complex queries
+- **Comprehensive Logging**: Timestamped, structured logs
+- **Cost Reports**: Detailed financial analysis
+
+## 🔧 Environment Setup
+
+### **Interactive Setup (Recommended)**
+
+```bash
+# Guided setup process
+python crashtransformer.py setup
+
+# Direct interactive setup
+python crashtransformer.py setup --interactive
+```
+
+### **Manual Setup**
+
+```bash
+# Create .env from template
+python crashtransformer.py setup --create-env
+
+# Validate configuration
+python crashtransformer.py validate
+
+# Install dependencies
+python crashtransformer.py install
+```
+
+## 🚀 Pipeline Execution
+
+### **Basic Usage**
+
+```bash
+# Use environment configuration
+python crashtransformer.py run --csv crashes.csv
+
+# Override LLM provider
+python crashtransformer.py run --csv crashes.csv --llm_provider anthropic
+
+# Enable Neo4j storage
+python crashtransformer.py run --csv crashes.csv --neo4j_enabled
+
+# Debug mode
+python crashtransformer.py run --csv crashes.csv --log_level DEBUG
+```
+
+### **Advanced Usage**
+
+```bash
+# Multiple summarization models
+python crashtransformer.py run --csv crashes.csv --batch_models facebook/bart-base t5-base
+
+# Custom output directory
+python crashtransformer.py run --csv crashes.csv --out_dir results
+
+# Cost tracking mode
+python crashtransformer.py run --csv crashes.csv --cost_mode api
+```
+
+## 📊 Input Requirements
+
+### **CSV/XLSX Format**
+
+Required columns:
+
+- `Crash_ID`: Unique identifier
+- `Latitude`, `Longitude`: Geographic coordinates
+- `CrashDate`, `DayOfWeek`, `CrashTime`: Temporal data
+- `County`, `City`: Location information
+- `SAE_Autonomy_Level`: Vehicle autonomy level
+- `Crash_Severity`: Severity classification
+- `Narrative`: Crash description text
+
+### **Example Input**
+
+```csv
+Crash_ID,Latitude,Longitude,CrashDate,DayOfWeek,CrashTime,County,City,SAE_Autonomy_Level,Crash_Severity,Narrative
+19955047,26.15526348,-97.99060556,2023-01-15,Sunday,14:30,Hidalgo,Weslaco,Level 0,Not Injured,"Unit 2 was stationary in the northbound lane. Unit 1 failed to control speed and struck Unit 2 on the back end."
+```
+
+## 📈 Outputs Generated
+
+### **1. Structured Graph Data**
+
+```json
+{
+  "crash": {
+    "crash_id": "19955047",
+    "latitude": 26.15526348,
+    "longitude": -97.99060556,
+    "city": "Weslaco",
+    "crash_severity": "Not Injured"
+  },
+  "entities": [
+    {"id": "19955047:U1", "label": "Vehicle", "unit_id": "U1"},
+    {"id": "19955047:U2", "label": "Vehicle", "unit_id": "U2"}
+  ],
+  "events": [
+    {"id": "19955047:E1", "type": "Violation", "attributes": {"reason": "failed to control speed"}},
+    {"id": "19955047:E2", "type": "Collision", "attributes": {"impact_config": "rear_end"}}
+  ],
+  "relationships": [
+    {"start": "19955047:E1", "end": "19955047:E2", "type": "CAUSES", "properties": {"marked": true}}
+  ]
+}
+```
+
+### **2. Causal Summaries**
+
+```
+Input: "Unit 2 was stationary in the northbound lane. Unit 1 failed to control speed and struck Unit 2 on the back end."
+
+Output: "Unit 1 failed to control speed and struck the stationary Unit 2 from behind, causing a rear-end collision."
+
+Metrics: {
+  "causal_precision": 0.95,
+  "causal_recall": 0.90,
+  "causal_f1": 0.92,
+  "span_faithfulness": 0.88,
+  "hallucination_rate": 0.05,
+  "compression_ratio": 0.15,
+  "combined_score": 0.89
+}
+```
+
+### **3. File Outputs**
+
+- `crash_graphs.jsonl` - Structured graph data
+- `crash_summaries.jsonl` - Generated summaries
+- `summaries_metrics.csv` - Quality metrics
+- `cost_report.json` - Cost analysis
+- `logs/` - Processing logs
+
+### **4. Neo4j Graph Database**
+
+- **Nodes**: Crash, Vehicle, Location, Event, Summary
+- **Relationships**: HAS_ENTITY, HAS_EVENT, CAUSES, PARTICIPATED_IN, HIT, HAS_SUMMARY
+
+## 🔒 Security & Configuration
+
+### **Environment Variables**
+
+All sensitive configuration is managed through `.env` file:
+
+```bash
+# LLM Configuration
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-your-key-here
+OPENAI_MODEL=gpt-4o-mini
+
+# Database Configuration
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=your-secure-password
+ENABLE_NEO4J=false
+
+# Logging Configuration
+LOG_DIR=logs
+LOG_LEVEL=INFO
+ENABLE_LOGGING=true
+```
+
+### **Security Features**
+
+- **🔐 Hidden Input**: API keys never displayed in terminal
+- **🔐 Secure Storage**: Configuration saved to `.env` file
+- **🔐 Validation**: Automatic configuration checking
+- **🔐 No CLI Secrets**: Sensitive data only via environment variables
+
+## 📊 Performance & Cost Optimization
+
+### **Provider Selection Guide**
+
+| Provider | Speed | Cost | Quality | Use Case |
+|----------|-------|------|---------|----------|
+| **Groq** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | Fast processing |
+| **OpenAI** | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | Balanced |
+| **Anthropic** | ⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐⭐ | High quality |
+| **Google** | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Cost-effective |
+| **Ollama** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ | Local processing |
+
+### **Cost Tracking**
+
+- **Token Usage**: Input/output tokens for each stage
+- **API Costs**: Real-time cost calculation
+- **GPU Costs**: Local processing costs
+- **Optimization**: Cost per 1,000 summaries analysis
+
+## 🛠️ Development & Customization
+
+### **Project Structure**
 
 ```
 crashtransformer/
-├── crash_transformer_pipeline.py    # Main pipeline
-├── src/                             # Source modules
-│   ├── __init__.py                 # Package initialization
-│   ├── enhanced_evaluation.py      # Comprehensive evaluation module
-│   └── cross_validation_module.py  # Cross-validation module
-├── inference_script.py              # Inference and analysis script
-├── run_comprehensive_evaluation.py  # Standalone evaluation runner
-├── test_pipeline.py                 # Test script
-├── pyproject.toml                   # Dependencies
-├── results/                         # Output directory
-│   ├── raw_data/                    # Raw evaluation data
-│   ├── plots/                       # Generated visualizations
-│   ├── metrics/                     # Evaluation metrics
-│   └── cross_validation/            # Cross-validation results
-├── models/                          # Trained models
-└── logs/                           # Log files
+├── crashtransformer.py          # Main entry point
+├── src/                         # Source code
+│   ├── main_pipeline.py         # Pipeline orchestration
+│   ├── setup_env.py            # Environment setup
+│   ├── utils/                   # Core modules
+│   │   ├── crash_graph_llm.py  # LLM integration
+│   │   ├── causal_plan_summarizer.py  # Summarization
+│   │   ├── cost_tracker.py     # Cost tracking
+│   │   ├── neo4j_io.py         # Database integration
+│   │   ├── llm_providers.py    # Multi-provider support
+│   │   └── config.py           # Configuration management
+│   └── misc/                   # Utilities
+│       └── logger.py           # Logging system
+├── env.example                 # Environment template
+└── README.md                   # This file
 ```
 
-## 🛠️ Installation
+### **Customization**
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd crashtransformer
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   uv sync
-   ```
-
-3. **Install Ollama** (for causal summary generation):
-   ```bash
-   # Follow instructions at https://ollama.ai/
-   ollama pull llama3.1:8b
-   ```
-
-## 📊 Usage
-
-### 1. Basic Pipeline
-
-Run the complete pipeline:
-```bash
-python crash_transformer_pipeline.py
-```
-
-Run in test mode (reduced dataset and epochs):
-```bash
-python crash_transformer_pipeline.py --test
-```
-
-### 2. Comprehensive Evaluation
-
-Run comprehensive evaluation on existing results:
-```bash
-python run_comprehensive_evaluation.py
-```
-
-With cross-validation:
-```bash
-python run_comprehensive_evaluation.py --cross-validation --cv-folds 5 --cv-epochs 2
-```
-
-### 3. Visualization Generation (No Inference Required)
-
-Create all visualizations from existing saved data:
-```bash
-python create_visualizations.py
-```
-
-Create specific types of visualizations:
-```bash
-# Basic visualizations only
-python create_visualizations.py --visualization-type basic
-
-# Enhanced visualizations only
-python create_visualizations.py --visualization-type enhanced
-
-# Cross-validation visualizations only
-python create_visualizations.py --visualization-type cv
-```
-
-Check available data and visualization options:
-```bash
-python quick_visualizations.py
-```
-
-### 4. Inference and Analysis
-
-Load saved model and results:
-```bash
-python inference_script.py --evaluate
-```
-
-Generate summary for specific text:
-```bash
-python inference_script.py --text "Your crash narrative here"
-```
-
-View saved metrics:
-```bash
-python inference_script.py --metrics
-```
-
-### 5. Cross-Validation
-
-Run cross-validation independently:
-```bash
-python cross_validation_module.py
-```
-
-## 📈 Evaluation Metrics
-
-### ROUGE Scores
-- **ROUGE-1**: Unigram overlap
-- **ROUGE-2**: Bigram overlap  
-- **ROUGE-L**: Longest common subsequence
-
-### BERTScore
-- **Precision**: How much of the prediction is semantically similar to reference
-- **Recall**: How much of the reference is captured in the prediction
-- **F1**: Harmonic mean of precision and recall
-
-### BLEU Score
-- **BLEU-1**: Unigram precision
-- **BLEU-2**: Bigram precision
-- **BLEU-3**: Trigram precision
-- **BLEU-4**: 4-gram precision
-
-### Semantic Similarity
-- **Cosine Similarity**: Semantic similarity using sentence transformers
-- **Distribution Analysis**: Statistical analysis of similarity scores
-
-### Length Metrics
-- **Length Ratio**: Prediction length / Reference length
-- **Length Distribution**: Statistical analysis of text lengths
-- **Performance by Length**: How metrics vary with text length
-
-## 📊 Visualizations
-
-### Generated Plots
-1. **rouge_scores.png**: ROUGE score comparisons
-2. **bertscore_distribution.png**: BERTScore distribution analysis
-3. **length_analysis.png**: Length analysis and ratios
-4. **semantic_similarity.png**: Semantic similarity distribution
-5. **bleu_distribution.png**: BLEU score distribution
-6. **summary_quality_analysis.png**: Quality score analysis
-7. **word_cloud_analysis.png**: Word frequency analysis
-8. **correlation_matrix.png**: Metric correlations
-9. **performance_by_length.png**: Performance vs length
-10. **error_analysis.png**: Error analysis and categorization
-
-### Cross-Validation Plots
-1. **fold_performance.png**: Performance across folds
-2. **metric_distribution.png**: Metric distributions across folds
-3. **learning_curves.png**: Training curves (if available)
-4. **prediction_quality.png**: Quality analysis by fold
-
-## 💾 Data Storage
-
-### Raw Data
-All raw data is saved for reproducibility:
-- **evaluation_data.json**: Predictions, references, and narratives
-- **comprehensive_metrics.json**: All computed metrics
-- **summary_statistics.txt**: Human-readable summary
-
-### Cross-Validation Data
-- **cv_results.json**: Complete cross-validation results
-- **aggregated_metrics.json**: Aggregated metrics across folds
-- **cv_summary.txt**: Cross-validation summary
-
-## 🎨 Visualization Without Inference
-
-**All visualizations can be created without running full inference!** The system stores raw data and provides multiple ways to generate plots:
-
-### Methods to Create Visualizations
-1. **Standalone Script**: `python create_visualizations.py`
-2. **Comprehensive Evaluation**: `python run_comprehensive_evaluation.py`
-3. **Direct Function Call**: From enhanced evaluation module
-4. **Inference Script**: `python inference_script.py --evaluate`
-
-### What's Stored for Reproducibility
-- ✅ **Predictions**: All model predictions saved to CSV
-- ✅ **References**: Ground truth summaries
-- ✅ **Narratives**: Original crash narratives
-- ✅ **Metrics**: All computed evaluation metrics
-- ✅ **Raw Data**: Complete evaluation data in JSON format
-- ✅ **Cross-Validation Results**: All fold results and aggregations
-
-### Benefits
-- 🚀 **Fast**: No need to rerun training or inference
-- 🔄 **Reproducible**: All data preserved for future analysis
-- 🎯 **Flexible**: Multiple ways to generate visualizations
-- 📊 **Comprehensive**: 10+ different types of plots available
-
-## 🔧 Configuration
-
-### Pipeline Parameters
-- **Model**: BART-base (configurable)
-- **Training epochs**: 3 (reduced in test mode)
-- **Batch size**: 4 (reduced in test mode)
-- **Learning rate**: 2e-5
-- **Max sequence length**: 512 (input), 64 (output)
-
-### Evaluation Parameters
-- **Evaluation samples**: 100 (configurable)
-- **Cross-validation folds**: 5 (configurable)
-- **Cross-validation epochs**: 2 (configurable)
+- **Custom Models**: Add new LLM providers
+- **Custom Metrics**: Extend quality scoring
+- **Custom Outputs**: Add new output formats
+- **Custom Processing**: Extend pipeline stages
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+### **Common Issues**
 
-1. **Ollama not available**:
+1. **Import Errors**
+
    ```bash
-   # Install Ollama
-   curl -fsSL https://ollama.ai/install.sh | sh
-   ollama pull llama3.1:8b
+   ❌ Error importing setup module
    ```
 
-2. **Missing dependencies**:
+   **Solution**: Ensure you're in the correct directory with `src/` folder
+
+2. **Configuration Errors**
+
    ```bash
-   uv add bert-score nltk sentence-transformers wordcloud
+   ❌ Configuration validation failed
    ```
 
-3. **CUDA out of memory**:
-   - Reduce batch size in training arguments
-   - Use CPU if GPU memory is insufficient
+   **Solution**: Run `python crashtransformer.py setup` to configure
 
-4. **Evaluation metrics fail**:
-   - Check if all required packages are installed
-   - Verify data format and content
+3. **API Key Issues**
 
-### Log Files
-Check log files in the `logs/` directory for detailed error information:
+   ```bash
+   ❌ OPENAI_API_KEY not set
+   ```
+
+   **Solution**: Run interactive setup and enter valid API key
+
+### **Debug Mode**
+
 ```bash
-tail -f logs/crashtransformer_*.log
+# Enable debug logging
+python crashtransformer.py run --csv crashes.csv --log_level DEBUG
+
+# Check configuration
+python crashtransformer.py validate
 ```
 
-## 📊 Results Interpretation
+## 📚 Documentation
 
-### Good Performance Indicators
-- **ROUGE-1 F1 > 0.3**: Good unigram overlap
-- **ROUGE-2 F1 > 0.1**: Good bigram overlap
-- **BERTScore F1 > 0.8**: High semantic similarity
-- **Length ratio close to 1.0**: Appropriate summary length
+- **`INTERACTIVE_SETUP.md`** - Environment setup guide
+- **`ENVIRONMENT_SETUP.md`** - Configuration documentation
+- **`src/`** - Source code and modules
 
-### Cross-Validation Stability
-- **Low standard deviation** across folds indicates stable performance
-- **Consistent performance** across different data splits
-- **Similar training curves** across folds
+## 🎯 Use Cases
 
-## 🔬 Advanced Usage
+1. **Insurance Claims**: Automated crash report analysis
+2. **Transportation Safety**: Pattern analysis and prevention
+3. **Legal Analysis**: Evidence extraction and summarization
+4. **Research**: Large-scale crash data analysis
+5. **Compliance**: Regulatory reporting and documentation
 
-### Custom Evaluation
-```python
-from src.enhanced_evaluation import ComprehensiveEvaluator
+## 🚀 Getting Started
 
-evaluator = ComprehensiveEvaluator("results")
-metrics = evaluator.compute_all_metrics(predictions, references, narratives)
-evaluator.create_comprehensive_visualizations(predictions, references, narratives)
-```
+1. **Clone the repository**
+2. **Run setup**: `python crashtransformer.py setup`
+3. **Prepare data**: Ensure CSV has required columns
+4. **Run pipeline**: `python crashtransformer.py run --csv crashes.csv`
+5. **Check results**: Review outputs in `artifacts/` directory
 
-### Custom Cross-Validation
-```python
-from src.cross_validation_module import CrossValidator
+## 📞 Support
 
-cv = CrossValidator("results")
-results = cv.run_cross_validation(narratives, summaries, n_splits=5, epochs=2)
-```
+For issues and questions:
 
-### Batch Processing
-```python
-from crash_transformer_pipeline import generate_causal_summaries_batch
+- Check documentation in `docs/` folder
+- Run `python crashtransformer.py help`
+- Review logs in `logs/` directory
 
-summaries = generate_causal_summaries_batch(narratives, batch_size=5)
-```
+---
 
-<!-- ## 📝 Citation
-
-If you use this pipeline in your research, please cite:
-
-```bibtex
-@software{crashtransformer2024,
-  title={CrashTransformer: Enhanced Crash Narrative Summarization Pipeline},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/yourusername/crashtransformer}
-}
-``` -->
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- HuggingFace Transformers for the BART model
-- Ollama for local LLM inference
-- The crash analysis community for domain expertise
+**CrashTransformer** - Transforming crash narratives into actionable insights with AI! 🚗💥🤖
