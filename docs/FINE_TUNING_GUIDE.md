@@ -24,7 +24,14 @@ python crashtransformer.py train --training_data training_data.csv --num_epochs 
 python crashtransformer.py train --training_data training_data.csv --model_name facebook/bart-base --num_epochs 5 --batch_size 16 --learning_rate 3e-5 --output_dir my_fine_tuned_model
 ```
 
-### 3. Use Fine-Tuned Model
+### 3. Compare Performance
+
+```bash
+# Run pipeline with both LLM and fine-tuned models for comparison
+python crashtransformer.py run --csv crashes.csv --model facebook/bart-base --fine_tuned_model my_fine_tuned_model/final_model
+```
+
+### 4. Use Fine-Tuned Model
 
 ```bash
 # Run pipeline with fine-tuned model

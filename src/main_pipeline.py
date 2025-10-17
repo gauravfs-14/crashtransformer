@@ -35,24 +35,30 @@ def run_one(row: Dict[str, Any], cps: CausalPlanSummarizer, track_tokens: bool =
     crash_id = row.get('Crash_ID', 'unknown')
     
     # A) LLM generates both graph and summary in one call
-    if logger:
-        logger.log_crash_processing(crash_id, "llm_extraction", "Starting LLM graph and summary extraction")
-    formatted = format_extraction_input(row)
-    
-    try:
-        print(f"🔧 DEBUG: Calling analyze_crash_with_summary_and_usage with provider: {llm_provider}, model: {llm_model}")
+    if not skip_llm:
         if logger:
-            logger.info(f"Calling analyze_crash_with_summary_and_usage with provider: {llm_provider}, model: {llm_model}")
-        graph_obj, llm_summary, llm_usage = analyze_crash_with_summary_and_usage(formatted, row, logger=logger, provider=llm_provider, model=llm_model, api_key=llm_api_key)
-        graph_json = json.loads(graph_obj.json())
-    except Exception as e:
+            logger.log_crash_processing(crash_id, "llm_extraction", "Starting LLM graph and summary extraction")
+        formatted = format_extraction_input(row)
+        
+        try:
+            if logger:
+                logger.info(f"Calling analyze_crash_with_summary_and_usage with provider: {llm_provider}, model: {llm_model}")
+            graph_obj, llm_summary, llm_usage = analyze_crash_with_summary_and_usage(formatted, row, logger=logger, provider=llm_provider, model=llm_model, api_key=llm_api_key)
+            graph_json = json.loads(graph_obj.json())
+        except Exception as e:
+            if logger:
+                logger.error(f"LLM extraction failed for crash {crash_id}: {str(e)}")
+            else:
+                print(f"❌ LLM extraction failed for crash {crash_id}: {str(e)}")
+            raise
+    else:
+        # Skip LLM extraction - use existing graph data
         if logger:
-            logger.error(f"LLM extraction failed for crash {crash_id}: {str(e)}")
-        else:
-            print(f"❌ LLM extraction failed for crash {crash_id}: {str(e)}")
-        raise
+            logger.log_crash_processing(crash_id, "llm_skip", "Skipping LLM extraction, using existing graph data")
+        # This would need to be implemented to load existing graphs
+        raise NotImplementedError("Loading existing graphs not yet implemented")
     
-    if logger:
+    if logger and not skip_llm:
         logger.log_llm_call(crash_id, llm_usage.provider, llm_usage.model or "unknown", 
                            llm_usage.total_tokens, llm_usage.total_cost_usd)
 
@@ -104,15 +110,15 @@ def run_one(row: Dict[str, Any], cps: CausalPlanSummarizer, track_tokens: bool =
         "plan_lines": result["plan_lines"],
         "best_summary": result["best"]["summary"] if result.get("best") else "",
         "metrics": result["best"]["metrics"] if result.get("best") else {},
-        # LLM summary for comparison and training data
-        "llm_summary": llm_summary,
-        "llm_runtime_sec": llm_usage.runtime_sec,
-        "llm_total_tokens": llm_usage.total_tokens,
-        "llm_prompt_tokens": llm_usage.prompt_tokens,
-        "llm_completion_tokens": llm_usage.completion_tokens,
-        "llm_cost_usd": llm_usage.total_cost_usd,
-        "llm_provider": llm_usage.provider,
-        "llm_model": llm_usage.model,
+        # LLM summary for comparison and training data (only if not skipped)
+        "llm_summary": llm_summary if not skip_llm else "",
+        "llm_runtime_sec": llm_usage.runtime_sec if not skip_llm else 0.0,
+        "llm_total_tokens": llm_usage.total_tokens if not skip_llm else 0,
+        "llm_prompt_tokens": llm_usage.prompt_tokens if not skip_llm else 0,
+        "llm_completion_tokens": llm_usage.completion_tokens if not skip_llm else 0,
+        "llm_cost_usd": llm_usage.total_cost_usd if not skip_llm else 0.0,
+        "llm_provider": llm_usage.provider if not skip_llm else "skipped",
+        "llm_model": llm_usage.model if not skip_llm else "skipped",
         # baseline model usage
         "summarizer_runtime_sec": t1 - t0,
         "summarizer_input_tokens": sum_input_tokens,

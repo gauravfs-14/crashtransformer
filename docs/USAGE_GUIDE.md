@@ -22,6 +22,8 @@ python crashtransformer.py run --csv crashes.csv
 |---------|-------------|-------|
 | `setup` | Environment configuration | `python crashtransformer.py setup` |
 | `run` | Execute pipeline | `python crashtransformer.py run --csv file.csv` |
+| `train` | Fine-tune models | `python crashtransformer.py train --training_data data.csv` |
+| `prepare-data` | Prepare training data | `python crashtransformer.py prepare-data --source pipeline` |
 | `validate` | Check configuration | `python crashtransformer.py validate` |
 | `install` | Install dependencies | `python crashtransformer.py install` |
 | `examples` | Show examples | `python crashtransformer.py examples` |

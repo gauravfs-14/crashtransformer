@@ -36,11 +36,12 @@ python crashtransformer.py run --csv crashes.csv
 
 ### **📊 Advanced Analytics**
 
-- **Graph Extraction**: Structured entities, events, relationships
-- **Causal Summarization**: Plan-conditioned summary generation
-- **Quality Metrics**: Precision, recall, faithfulness, hallucination rates
-- **Cost Tracking**: Token usage, runtime, monetary costs
-- **Performance Analytics**: Processing times, throughput analysis
+- **Graph Extraction**: LLM-powered structured entities, events, relationships
+- **Dual Summarization**: Both LLM and fine-tuned model summaries for comparison
+- **Single LLM Call**: Efficient API usage - one call generates both graph and summary
+- **Quality Metrics**: Precision, recall, faithfulness, hallucination rates, ROUGE, BLEU, BERTScore
+- **Cost Tracking**: Token usage, runtime, monetary costs for both LLM and local models
+- **Performance Analytics**: Processing times, throughput analysis, model comparison
 
 ### **🗄️ Data Storage**
 
