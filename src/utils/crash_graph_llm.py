@@ -73,6 +73,7 @@ class CrashGraph(BaseModel):
     events: List[CrashEvent]
     relationships: List[CrashRelationship]
 
+
 # LLMUsage is now imported from llm_providers module
 
 
@@ -92,6 +93,8 @@ def create_structured_llm(provider: str = DEFAULT_PROVIDER, model: str = DEFAULT
         return llm.with_structured_output(CrashGraph), llm_provider
     except Exception as e:
         raise ValueError(f"Failed to create LLM with provider {provider}: {e}")
+
+
 
 # Create default structured LLM (lazy initialization)
 structured_llm = None
@@ -270,6 +273,7 @@ system_prompt = (
     "Return your answer as a structured JSON tool call under the schema 'CrashGraph'."
 )
 
+
 prompt = ChatPromptTemplate.from_messages([
     ("system", system_prompt),
     ("placeholder", "{examples}"),
@@ -289,7 +293,7 @@ def get_structured_crash_llm():
 
 def analyze_crash(narrative: str, metadata: Dict[str, Any], logger=None, provider: str = None, model: str = None, api_key: str = None):
     """Invoke the structured crash graph LLM on new data"""
-    crash_id = metadata.get('Crash_ID', 'unknown')
+    crash_id = str(metadata.get('Crash_ID', 'unknown'))  # Ensure string type
     crash_text = f"Crash {crash_id}: {narrative}"
     
     # If no provider is specified, try to get it from environment
@@ -372,7 +376,7 @@ def analyze_crash_with_usage(narrative_or_formatted: str, metadata: Dict[str, An
                 logger.info(f"Created provider: {type(llm_provider).__name__}")
             custom_llm = llm_provider.get_llm().with_structured_output(CrashGraph)
             
-            crash_id = metadata.get('Crash_ID', 'unknown')
+            crash_id = str(metadata.get('Crash_ID', 'unknown'))  # Ensure string type
             crash_text = f"Crash {crash_id}: {narrative_or_formatted}"
             
             if logger:
@@ -459,6 +463,57 @@ if __name__ == "__main__":
     print(graph.json(indent=2))
 
 
+# Create examples with summaries
+examples_with_summary = [
+    # Modify first example to include summary
+    HumanMessage(
+        content="Crash 19955047: Unit 2 was stationary at a red light on S. Texas Blvd. Unit 1 failed to control speed and struck Unit 2 on the back end.",
+        name="example_user",
+    ),
+    AIMessage(
+        content="",
+        name="example_assistant",
+        tool_calls=[
+            {
+                "name": TOOL_NAME,
+                "args": {
+                    "crash": {
+                        "crash_id": "19955047",
+                        "latitude": 26.15526348,
+                        "longitude": -97.99060556,
+                        "crash_date": "1/1/24",
+                        "day_of_week": "MON",
+                        "crash_time": "2:06 AM",
+                        "county": "Hidalgo",
+                        "city": "Weslaco",
+                        "sae_autonomy_level": "2",
+                        "crash_severity": "Not Injured",
+                        "raw_narrative": "Unit 2 was stationary... Unit 1 failed to control speed and struck Unit 2.",
+                    },
+                    "entities": [
+                        {"id": "19955047:U1", "label": "Vehicle", "unit_id": "U1"},
+                        {"id": "19955047:U2", "label": "Vehicle", "unit_id": "U2"},
+                        {"id": "19955047:L1", "label": "Location", "name": "600 block of S. Texas Blvd", "city": "Weslaco"},
+                    ],
+                    "events": [
+                        {"id": "19955047:E1", "label": "Event", "type": "Violation", "attributes": {"reason": "failed to control speed"}},
+                        {"id": "19955047:E2", "label": "Event", "type": "Collision", "attributes": {"impact_config": "rear_end"}},
+                    ],
+                    "relationships": [
+                        {"start": "19955047:U1", "end": "19955047:E1", "type": "PARTICIPATED_IN", "properties": {"role": "Agent"}},
+                        {"start": "19955047:U1", "end": "19955047:U2", "type": "HIT", "properties": {"impact_config": "fd-bd"}},
+                        {"start": "19955047:E1", "end": "19955047:E2", "type": "CAUSES", "properties": {"confidence": 0.9}},
+                    ],
+                    "summary": "Unit 1 failed to control speed while traveling north and struck the rear end of Unit 2, which was stationary at a red light on S. Texas Blvd."
+                },
+                "id": "tool-1",
+            }
+        ],
+    ),
+    ToolMessage(content="", tool_call_id="tool-1"),
+]
+
+
 def analyze_crash_with_summary_and_usage(narrative_or_formatted: str, metadata: Dict[str, Any], logger=None, provider: str = None, model: str = None, api_key: str = None) -> Tuple[CrashGraph, str, LLMUsage]:
     """Generate both crash graph and summary in one LLM call"""
     start = time.time()
@@ -470,153 +525,109 @@ def analyze_crash_with_summary_and_usage(narrative_or_formatted: str, metadata: 
         # Extract narrative from formatted input
         narrative = narrative_or_formatted.get('Narrative', '')
     
-    crash_id = metadata.get('Crash_ID', 'unknown')
+    crash_id = str(metadata.get('Crash_ID', 'unknown'))  # Ensure string type
     crash_text = f"Crash {crash_id}: {narrative}"
     
-    # Create a combined prompt that asks for both graph extraction AND summary generation
-    combined_system_prompt = (
-        "You are an expert transportation crash data analyst. "
-        "Given a crash narrative and metadata, you need to: "
-        "1. Extract entities (vehicles, locations), events (violations, collisions), and causal relationships into a graph. "
-        "2. Generate a concise 1-2 sentence summary of the crash. "
-        "Return your answer as a structured JSON with both the graph and summary."
-    )
+    # If no provider is specified, try to get it from environment
+    if not provider:
+        from .config import config
+        # Reload config to get latest environment variables
+        config.reload()
+        llm_config = config.get_llm_config()
+        provider = llm_config.provider
+        model = model or llm_config.model
+        api_key = api_key or llm_config.api_key
     
-    # Create the combined prompt
-    combined_prompt = f"""
-{combined_system_prompt}
-
-Crash narrative: {crash_text}
-
-Please provide:
-1. A structured graph with entities, events, and relationships
-2. A concise summary in 1-2 sentences
-
-Format your response as JSON with these fields:
-- crash: metadata about the crash
-- entities: list of entities (vehicles, locations, etc.)
-- events: list of events (violations, collisions, etc.) 
-- relationships: list of causal relationships
-- summary: concise 1-2 sentence summary of the crash
-"""
+    if logger:
+        logger.log_crash_processing(crash_id, "llm_invocation", f"Calling structured LLM with provider: {provider or DEFAULT_PROVIDER}")
     
     try:
-        # Create LLM provider
-        llm_provider = LLMProviderFactory.create_provider(
-            provider=provider or "openai",
-            model_name=model or "gpt-4o-mini", 
-            api_key=api_key
+        # Use the existing structured LLM approach
+        if provider and provider != DEFAULT_PROVIDER:
+            try:
+                custom_llm, custom_provider = create_structured_llm(provider, model or DEFAULT_MODEL, api_key)
+                
+                # Create the prompt with examples and input
+                prompt = ChatPromptTemplate.from_messages([
+                    ("system", system_prompt),
+                    ("placeholder", "{examples}"),
+                    ("human", "{input}")
+                ])
+                
+                # Format the prompt with examples and input
+                formatted_prompt = prompt.format(examples=examples, input=crash_text)
+                result = custom_llm.invoke(formatted_prompt)
+            except Exception as e:
+                if logger:
+                    logger.error(f"Failed to use custom provider {provider}: {e}")
+                # Fallback to default
+                llm, _ = get_default_structured_llm()
+                result = llm.invoke({
+                    "examples": examples,
+                    "input": crash_text
+                })
+        else:
+            llm, _ = get_default_structured_llm()
+            result = llm.invoke({
+                "examples": examples,
+                "input": crash_text
+            })
+        
+        if logger:
+            logger.log_crash_processing(crash_id, "llm_response", "Received structured LLM response")
+        
+        # Generate a simple summary from the graph
+        summary = _generate_summary_from_graph(result, narrative)
+        
+        end = time.time()
+        
+        # Create usage object
+        usage = LLMUsage(
+            provider=provider or DEFAULT_PROVIDER,
+            model=model or DEFAULT_MODEL,
+            prompt_tokens=0,  # Not available from structured output
+            completion_tokens=0,  # Not available from structured output
+            total_tokens=0,  # Not available from structured output
+            total_cost_usd=0.0,  # Not available from structured output
+            runtime_sec=end - start
         )
         
         if logger:
-            logger.info(f"Making single LLM call for crash {crash_id} with provider: {provider}")
+            logger.log_llm_call(crash_id, usage.provider, usage.model, usage.total_tokens, usage.total_cost_usd)
         
-        # Make single LLM call
-        response = llm_provider.get_llm().invoke(combined_prompt)
-        response_text = response.content if hasattr(response, 'content') else str(response)
-        
-        # Parse the response to extract graph and summary
-        try:
-            import json
-            response_data = json.loads(response_text)
-            
-            # Extract summary
-            summary = response_data.get('summary', '')
-            
-            # Create graph object from the response data
-            from .crash_graph_llm import CrashGraph, CrashMetadata, CrashEntity, CrashEvent, CrashRelationship
-            
-            # Parse crash metadata
-            crash_data = response_data.get('crash', {})
-            crash_metadata = CrashMetadata(
-                crash_id=crash_data.get('crash_id', crash_id),
-                latitude=crash_data.get('latitude'),
-                longitude=crash_data.get('longitude'),
-                crash_date=crash_data.get('crash_date'),
-                day_of_week=crash_data.get('day_of_week'),
-                crash_time=crash_data.get('crash_time'),
-                county=crash_data.get('county'),
-                city=crash_data.get('city'),
-                sae_autonomy_level=crash_data.get('sae_autonomy_level'),
-                crash_severity=crash_data.get('crash_severity'),
-                raw_narrative=narrative,
-                source="police_report"
-            )
-            
-            # Parse entities
-            entities = []
-            for entity_data in response_data.get('entities', []):
-                entities.append(CrashEntity(
-                    id=entity_data.get('id', ''),
-                    label=entity_data.get('label', ''),
-                    unit_id=entity_data.get('unit_id'),
-                    mention_text=entity_data.get('mention_text'),
-                    name=entity_data.get('name'),
-                    road=entity_data.get('road'),
-                    block=entity_data.get('block'),
-                    city=entity_data.get('city'),
-                    confidence=entity_data.get('confidence')
-                ))
-            
-            # Parse events
-            events = []
-            for event_data in response_data.get('events', []):
-                events.append(CrashEvent(
-                    id=event_data.get('id', ''),
-                    label=event_data.get('label', ''),
-                    type=event_data.get('type', ''),
-                    attributes=event_data.get('attributes', {}),
-                    confidence=event_data.get('confidence'),
-                    evidence_span=event_data.get('evidence_span')
-                ))
-            
-            # Parse relationships
-            relationships = []
-            for rel_data in response_data.get('relationships', []):
-                relationships.append(CrashRelationship(
-                    start=rel_data.get('start', ''),
-                    end=rel_data.get('end', ''),
-                    type=rel_data.get('type', ''),
-                    properties=rel_data.get('properties', {})
-                ))
-            
-            # Create the graph object
-            graph_obj = CrashGraph(
-                crash=crash_metadata,
-                entities=entities,
-                events=events,
-                relationships=relationships
-            )
-            
-        except (json.JSONDecodeError, KeyError, TypeError) as e:
-            if logger:
-                logger.warning(f"Failed to parse LLM response as JSON for crash {crash_id}: {e}")
-                logger.warning(f"Response was: {response_text[:200]}...")
-            
-            # Fallback: try to extract summary from text and create minimal graph
-            summary = response_text.strip()
-            
-            # Create minimal graph with just the crash metadata
-            from .crash_graph_llm import CrashGraph, CrashMetadata
-            crash_metadata = CrashMetadata(
-                crash_id=crash_id,
-                raw_narrative=narrative,
-                source="police_report"
-            )
-            graph_obj = CrashGraph(
-                crash=crash_metadata,
-                entities=[],
-                events=[],
-                relationships=[]
-            )
-        
-        # Get usage stats from the LLM provider
-        end = time.time()
-        usage = llm_provider.get_usage_stats(response, start, end)
-        
-        return graph_obj, summary, usage
+        return result, summary, usage
         
     except Exception as e:
         if logger:
-            logger.error(f"Combined LLM call failed for crash {crash_id}: {e}")
+            logger.error(f"LLM call failed for crash {crash_id}: {str(e)}")
+        else:
+            print(f"❌ LLM call failed for crash {crash_id}: {str(e)}")
         raise
+
+
+def _generate_summary_from_graph(graph: CrashGraph, narrative: str) -> str:
+    """Generate a simple summary from the crash graph"""
+    try:
+        # Extract key information from the graph
+        vehicles = [e for e in graph.entities if e.label == "Vehicle"]
+        events = [e for e in graph.events if e.type in ["Violation", "Collision"]]
+        
+        if not vehicles or not events:
+            return f"Vehicle crash occurred: {narrative[:100]}..."
+        
+        # Create a simple summary
+        vehicle_ids = [v.unit_id for v in vehicles if v.unit_id]
+        event_types = [e.type for e in events]
+        
+        if "Collision" in event_types and "Violation" in event_types:
+            return f"Vehicle collision involving {', '.join(vehicle_ids)} with traffic violation and collision."
+        elif "Collision" in event_types:
+            return f"Vehicle collision involving {', '.join(vehicle_ids)}."
+        elif "Violation" in event_types:
+            return f"Traffic violation involving {', '.join(vehicle_ids)}."
+        else:
+            return f"Vehicle incident involving {', '.join(vehicle_ids)}."
+            
+    except Exception:
+        # Fallback to simple narrative truncation
+        return f"Vehicle crash: {narrative[:100]}..."

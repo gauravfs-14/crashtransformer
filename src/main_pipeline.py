@@ -126,11 +126,108 @@ def run_one(row: Dict[str, Any], cps: CausalPlanSummarizer, track_tokens: bool =
     }
 
 
+def run_one_with_existing_graph(row: Dict[str, Any], graph_data: Dict[str, Any], cps: CausalPlanSummarizer, track_tokens: bool = True, logger=None) -> Dict[str, Any]:
+    """
+    Process a crash using existing graph data (no LLM call)
+    """
+    crash_id = row.get('Crash_ID', 'unknown')
+    
+    if logger:
+        logger.log_crash_processing(crash_id, "existing_graph", "Using existing graph data")
+    
+    # Extract graph from existing data
+    graph_json = {
+        "crash": graph_data.get("crash", {}),
+        "entities": graph_data.get("entities", []),
+        "events": graph_data.get("events", []),
+        "relationships": graph_data.get("relationships", [])
+    }
+    
+    # Extract LLM summary from existing data
+    llm_summary = graph_data.get("llm_summary", "")
+    
+    # B) Baseline model summarization for comparison
+    if logger:
+        logger.log_crash_processing(crash_id, "baseline_summarization", "Starting baseline model summarization")
+    t0 = time.time()
+    
+    try:
+        result = cps.summarize(graph_json, num_candidates=4)
+    except Exception as e:
+        if logger:
+            logger.error(f"Baseline summarization failed for crash {crash_id}: {str(e)}")
+        else:
+            print(f"❌ Baseline summarization failed for crash {crash_id}: {str(e)}")
+        raise
+    
+    t1 = time.time()
+    
+    if logger and result.get("best"):
+        best_score = result["best"].get("metrics", {}).get("combined_score", 0.0)
+        logger.log_summary_generation(crash_id, "plan_conditioned", 4, best_score)
+
+    # C) summarizer token counts
+    sum_input_tokens = sum_output_tokens = None
+    if track_tokens:
+        try:
+            tok = cps.gen.tok
+            plan_block = "\n".join(result["plan_lines"]) if result["plan_lines"] else "1) main cause -> main outcome"
+            prompt = (
+                "You are a crash analyst. Write a concise causal summary in 1 to 3 sentences. "
+                "Cover the listed edges and keep claims faithful to the narrative.\n"
+                "Plan:\n"
+                f"{plan_block}\n"
+                "Narrative:\n"
+                f"{graph_json['crash'].get('raw_narrative', '').strip()}\n"
+                "Summary:"
+            )
+            sum_input_tokens = len(tok.encode(prompt))
+            sum_output_tokens = len(tok.encode(result["best"]["summary"])) if result.get("best") else 0
+        except Exception:
+            pass
+
+    return {
+        "Crash_ID": row.get("Crash_ID"),
+        # raw graph
+        "graph": graph_json,
+        # plan and best summary (baseline model)
+        "plan_lines": result["plan_lines"],
+        "best_summary": result["best"]["summary"] if result.get("best") else "",
+        "metrics": result["best"]["metrics"] if result.get("best") else {},
+        # LLM summary from existing data
+        "llm_summary": llm_summary,
+        "llm_runtime_sec": 0.0,  # No LLM call
+        "llm_total_tokens": 0,
+        "llm_prompt_tokens": 0,
+        "llm_completion_tokens": 0,
+        "llm_cost_usd": 0.0,
+        "llm_provider": "reused",
+        "llm_model": "reused",
+        # baseline model usage
+        "summarizer_runtime_sec": t1 - t0,
+        "summarizer_input_tokens": sum_input_tokens,
+        "summarizer_output_tokens": sum_output_tokens,
+    }
+
+
 def _write_jsonl(path: str, rows: List[dict], append: bool = False) -> None:
     mode = "a" if append and os.path.exists(path) else "w"
     with open(path, mode, encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+def load_existing_graphs(graphs_file: str) -> Dict[str, Dict[str, Any]]:
+    """Load existing graphs from JSONL file and index by Crash_ID"""
+    graphs_by_id = {}
+    if os.path.exists(graphs_file):
+        with open(graphs_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.strip():
+                    graph_data = json.loads(line)
+                    crash_id = str(graph_data.get('Crash_ID', ''))
+                    graphs_by_id[crash_id] = graph_data
+    return graphs_by_id
 
 
 def run_batch(rows: Iterable[Dict[str, Any]],
@@ -145,7 +242,9 @@ def run_batch(rows: Iterable[Dict[str, Any]],
               neo4j_sink=None,
               llm_provider: str = None,
               llm_model: str = None,
-              llm_api_key: str = None) -> List[Dict[str, Any]]:
+              llm_api_key: str = None,
+              skip_llm: bool = False,
+              existing_graphs: List[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
 
     out_dir = os.path.join(out_dir, model_name.replace("/", "_"))
     os.makedirs(out_dir, exist_ok=True)
@@ -186,12 +285,46 @@ def run_batch(rows: Iterable[Dict[str, Any]],
     failed = 0
     total_cost = 0.0
     
+    # Load existing graphs if skip_llm is True
+    existing_graphs = {}
+    if skip_llm:
+        # Try to find existing graphs in the output directory
+        graphs_file = os.path.join(out_dir, "crash_graphs.jsonl")
+        existing_graphs = load_existing_graphs(graphs_file)
+        
+        # If no graphs found in model-specific directory, try parent directory
+        if not existing_graphs:
+            parent_dir = os.path.dirname(out_dir)
+            graphs_file = os.path.join(parent_dir, "crash_graphs.jsonl")
+            existing_graphs = load_existing_graphs(graphs_file)
+        
+        # If still no graphs found, try to find any crash_graphs.jsonl file in the artifacts directory
+        if not existing_graphs:
+            import glob
+            artifacts_dir = os.path.dirname(os.path.dirname(out_dir))  # Go up two levels to artifacts
+            graphs_files = glob.glob(os.path.join(artifacts_dir, "**", "crash_graphs.jsonl"), recursive=True)
+            if graphs_files:
+                graphs_file = graphs_files[0]  # Use the first one found
+                existing_graphs = load_existing_graphs(graphs_file)
+        
+        if logger:
+            logger.info(f"Loaded {len(existing_graphs)} existing graphs from {graphs_file}")
+    
     for row in rows:
         try:
-            out = run_one(row, cps, track_tokens=True, logger=logger, llm_provider=llm_provider, llm_model=llm_model, llm_api_key=llm_api_key)
+            # Check if we should use existing graph
+            crash_id = str(row.get('Crash_ID', ''))
+            if skip_llm and crash_id in existing_graphs:
+                # Use existing graph data
+                graph_data = existing_graphs[crash_id]
+                out = run_one_with_existing_graph(row, graph_data, cps, track_tokens=True, logger=logger)
+            else:
+                # Generate new graph with LLM
+                out = run_one(row, cps, track_tokens=True, logger=logger, llm_provider=llm_provider, llm_model=llm_model, llm_api_key=llm_api_key, skip_llm=skip_llm)
+            
             results.append(out)
             successful += 1
-            total_cost += out.get("extract_cost_usd", 0.0)
+            total_cost += out.get("llm_cost_usd", 0.0)
         except Exception as e:
             failed += 1
             if logger:
@@ -363,7 +496,8 @@ def run_batch(rows: Iterable[Dict[str, Any]],
 
     return results
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for the pipeline"""
     import argparse
     import pandas as pd
 
@@ -542,7 +676,8 @@ if __name__ == "__main__":
                 neo4j_sink=neo4j_sink,
                 llm_provider=llm_config.provider,
                 llm_model=llm_config.model,
-                llm_api_key=llm_config.api_key
+                llm_api_key=llm_config.api_key,
+                skip_llm=args.skip_llm
             )
         except Exception as e:
             error_msg = f"Pipeline failed for model {m}: {str(e)}"
@@ -573,71 +708,6 @@ if __name__ == "__main__":
             if logger:
                 logger.error(f"Error closing Neo4j connection: {str(e)}")
             print(f"Warning: Error closing Neo4j connection: {str(e)}")
-
-def main():
-    """Main entry point for the pipeline"""
-    import argparse
-    import pandas as pd
-    
-    parser = argparse.ArgumentParser(description="CrashTransformer Pipeline")
-    parser.add_argument("--csv", help="Input CSV file")
-    parser.add_argument("--xlsx", help="Input XLSX file")
-    parser.add_argument("--llm_provider", help="LLM provider")
-    parser.add_argument("--llm_model", help="LLM model")
-    parser.add_argument("--neo4j_enabled", action="store_true", help="Enable Neo4j")
-    parser.add_argument("--neo4j_uri", help="Neo4j URI")
-    parser.add_argument("--log_level", default="INFO", help="Log level")
-    parser.add_argument("--log_dir", help="Log directory")
-    parser.add_argument("--out_dir", help="Output directory")
-    parser.add_argument("--model", help="Summarization model")
-    parser.add_argument("--batch_models", nargs="+", help="Multiple models")
-    parser.add_argument("--fine_tuned_model", help="Fine-tuned model path")
-    parser.add_argument("--cost_mode", help="Cost calculation mode")
-    
-    args = parser.parse_args()
-    
-    # Load configuration and set LLM parameters if not provided
-    from .utils.config import config
-    if args.llm_provider is None:
-        args.llm_provider = config.get_llm_config().provider
-    if args.llm_model is None:
-        args.llm_model = config.get_llm_config().model
-    
-    # Load data
-    if args.csv:
-        df = pd.read_csv(args.csv)
-    elif args.xlsx:
-        df = pd.read_excel(args.xlsx)
-    else:
-        print("Error: Must specify either --csv or --xlsx")
-        return
-    
-    rows = df.to_dict('records')
-    
-    # Handle multiple models
-    if args.batch_models:
-        for model in args.batch_models:
-            print(f"Running pipeline with model: {model}")
-            run_batch(
-                rows=rows,
-                model_name=model,
-                fine_tuned_model_path=args.fine_tuned_model,
-                out_dir=args.out_dir or "artifacts",
-                llm_provider=args.llm_provider,
-                llm_model=args.llm_model
-            )
-    else:
-        # Single model
-        model_name = args.model or "facebook/bart-base"
-        print(f"Running pipeline with model: {model_name}")
-        run_batch(
-            rows=rows,
-            model_name=model_name,
-            fine_tuned_model_path=args.fine_tuned_model,
-            out_dir=args.out_dir or "artifacts",
-            llm_provider=args.llm_provider,
-            llm_model=args.llm_model
-        )
 
 if __name__ == "__main__":
     main()

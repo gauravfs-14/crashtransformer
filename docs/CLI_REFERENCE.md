@@ -35,7 +35,7 @@ python crashtransformer.py run \
   (--csv FILE | --xlsx FILE) \
   [--llm_provider PROVIDER] [--llm_model MODEL] [--neo4j_enabled] [--neo4j_uri URI] \
   [--log_level LEVEL] [--log_dir DIR] [--no_logs] \
-  [--out_dir DIR] [--append] \
+  [--out_dir DIR] [--append] [--skip_llm] \
   [--model MODEL] [--batch_models MODELS...] [--cost_mode MODE]
 ```
 
@@ -58,6 +58,29 @@ python crashtransformer.py prepare-data \
   [--graphs_file FILE] [--summaries_file FILE] \
   --output FILE [--format (csv|jsonl)] [--num_examples N]
 ```
+
+## Key Flags
+
+### `--skip_llm`
+
+Skip LLM extraction and use existing graphs from previous runs. Enables cost-efficient multi-model comparison by reusing graph structures.
+
+**Usage:**
+
+```bash
+# Phase 1: Generate graphs (with LLM)
+python crashtransformer.py run --csv crashes.csv --out_dir artifacts/llm_extraction
+
+# Phase 2: Compare models (reuse graphs, no LLM calls)
+python crashtransformer.py run --csv crashes.csv --model facebook/bart-base --out_dir artifacts/bart --skip_llm
+python crashtransformer.py run --csv crashes.csv --model t5-base --out_dir artifacts/t5 --skip_llm
+```
+
+**Benefits:**
+
+- **Cost Reduction**: ~80% savings on LLM API calls
+- **Consistency**: Identical graphs across all model evaluations
+- **Fair Comparison**: Models evaluated on same graph structures
 
 ## Examples
 

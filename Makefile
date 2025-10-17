@@ -1,6 +1,6 @@
 # Makefile for CrashTransformer end-to-end workflow
 
-.PHONY: all test setup data baseline baseline-full prepare-training-data prepare-training-data-full finetune-bart finetune-bart-full finetune-t5 finetune-t5-full run-finetuned-bart run-finetuned-bart-full run-finetuned-t5 run-finetuned-t5-full visualize-bart visualize-t5 clean help
+.PHONY: all test setup data baseline baseline-full baseline-only llm-pipeline llm-pipeline-full llm-pipeline-with-baseline prepare-training-data prepare-training-data-full finetune-bart finetune-bart-full finetune-t5 finetune-t5-full run-finetuned-bart run-finetuned-bart-full run-finetuned-t5 run-finetuned-t5-full visualize-bart visualize-t5 clean help
 
 # Stop on any error
 .SHELLFLAGS := -e -o pipefail
@@ -47,35 +47,53 @@ TRAINING_T5 := $(TRAINING_DATA_DIR)/training_data_t5.csv
 TRAINING_BART_FULL := $(TRAINING_DATA_DIR)/training_data_bart_full.csv
 TRAINING_T5_FULL := $(TRAINING_DATA_DIR)/training_data_t5_full.csv
 
-# Default target runs on FULL data
-all: setup llm-pipeline-full baseline-full finetune-bart-full finetune-t5-full run-finetuned-bart-full run-finetuned-t5-full
+# Default target runs on FULL data (optimized for cost efficiency)
+all: setup llm-pipeline-full baseline-full-optimized prepare-training-data-full finetune-bart-full finetune-t5-full run-finetuned-bart-full run-finetuned-t5-full
 
-# Test target runs on 5-row sample
-test: setup data llm-pipeline-with-baseline prepare-training-data finetune-bart finetune-t5 run-finetuned-bart run-finetuned-t5
+# Test target runs on 5-row sample (optimized for cost efficiency)
+test: setup data llm-pipeline baseline-only prepare-training-data finetune-bart finetune-t5 run-finetuned-bart run-finetuned-t5
 
 help:
 	@echo "Targets:"
-	@echo "  all                  - Full pipeline on complete dataset (XLSX)"
-	@echo "  test                 - Full pipeline on 5-row test CSV"
+	@echo "  all                  - Full pipeline on complete dataset (XLSX, cost-optimized)"
+	@echo "  test                 - Full pipeline on 5-row test CSV (cost-optimized)"
 	@echo "  setup                - Setup environment"
 	@echo "  data                 - Create 5-row test dataset in data/"
+	@echo ""
+	@echo "LLM Pipeline (Graph Generation):"
 	@echo "  llm-pipeline         - Run LLM pipeline to generate crash graphs (test)"
 	@echo "  llm-pipeline-full    - Run LLM pipeline to generate crash graphs (full)"
+	@echo "  llm-pipeline-with-baseline - Run LLM + baseline models in one go (test)"
+	@echo ""
+	@echo "Baseline Models:"
 	@echo "  baseline             - Run baseline (BART/T5) on 5-row CSV"
 	@echo "  baseline-full        - Run baseline (BART/T5) on full XLSX"
+	@echo "  baseline-only        - Run baseline models using existing graphs (cost-efficient)"
+	@echo "  baseline-full-optimized - Run baseline models using existing graphs (full, cost-efficient)"
+	@echo ""
+	@echo "Training Data & Fine-tuning:"
 	@echo "  prepare-training-data- Build training CSVs from test baseline outputs"
 	@echo "  prepare-training-data-full - Build training CSVs from full baseline outputs"
 	@echo "  finetune-bart        - Fine-tune facebook/bart-base (test)"
 	@echo "  finetune-bart-full   - Fine-tune facebook/bart-base (full)"
 	@echo "  finetune-t5          - Fine-tune t5-base (test)"
 	@echo "  finetune-t5-full     - Fine-tune t5-base (full)"
+	@echo ""
+	@echo "Fine-tuned Model Runs:"
 	@echo "  run-finetuned-bart   - Run pipeline using fine-tuned BART (test)"
 	@echo "  run-finetuned-bart-full - Run pipeline using fine-tuned BART (full)"
 	@echo "  run-finetuned-t5     - Run pipeline using fine-tuned T5 (test)"
 	@echo "  run-finetuned-t5-full - Run pipeline using fine-tuned T5 (full)"
+	@echo ""
+	@echo "Utilities:"
 	@echo "  visualize-bart       - Create visualizations for BART training"
-	@echo "  visualize-t5          - Create visualizations for T5 training"
+	@echo "  visualize-t5         - Create visualizations for T5 training"
 	@echo "  clean                - Remove generated artifacts and training data"
+	@echo ""
+	@echo "Cost Optimization:"
+	@echo "  💡 Use *-optimized targets to save ~80% on LLM API costs"
+	@echo "  💡 Phase 1: Run llm-pipeline to generate graphs once"
+	@echo "  💡 Phase 2: Run baseline-only to reuse graphs for model comparison"
 
 setup:
 	$(PY) crashtransformer.py setup
@@ -140,7 +158,8 @@ baseline: llm-pipeline
 	  --log_level INFO || (echo "❌ T5 baseline failed!" && exit 1)
 
 baseline-only:
-	@echo "📊 Running baseline summarization models on existing crash graphs..."
+	@echo "📊 Running baseline summarization models on existing crash graphs (cost-efficient)..."
+	@echo "💡 This reuses graphs from previous LLM runs, saving ~80% on API costs"
 	@mkdir -p $(BASE_OUT)
 	@echo "🤖 Running BART baseline model (reusing existing graphs)..."
 	@$(PY) crashtransformer.py run \
@@ -229,6 +248,18 @@ baseline-full: llm-pipeline-full
 	@$(PY) crashtransformer.py run \
 	  --xlsx $(DATA_XLSX) \
 	  --batch_models facebook/bart-base t5-base \
+	  --neo4j_enabled \
+	  --out_dir $(BASE_OUT_FULL) \
+	  --log_level INFO || (echo "❌ Baseline models failed!" && exit 1)
+
+baseline-full-optimized: llm-pipeline-full
+	@echo "📊 Running baseline summarization models on existing crash graphs (full dataset, cost-efficient)..."
+	@echo "💡 This reuses graphs from previous LLM runs, saving ~80% on API costs"
+	@mkdir -p $(BASE_OUT_FULL)
+	@$(PY) crashtransformer.py run \
+	  --xlsx $(DATA_XLSX) \
+	  --batch_models facebook/bart-base t5-base \
+	  --skip_llm \
 	  --neo4j_enabled \
 	  --out_dir $(BASE_OUT_FULL) \
 	  --log_level INFO || (echo "❌ Baseline models failed!" && exit 1)

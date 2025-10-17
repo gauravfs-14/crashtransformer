@@ -106,6 +106,31 @@ python crashtransformer.py run --csv crashes.csv --cost_mode api
 python crashtransformer.py run --csv crashes.csv --log_dir custom_logs
 ```
 
+#### **Optimized Two-Phase Pipeline (Cost Efficient)**
+
+For comparing multiple models while minimizing LLM costs:
+
+#### Phase 1: Generate graphs and LLM summaries (once)
+
+```bash
+# Generate graphs and LLM summaries
+python crashtransformer.py run --csv crashes.csv --model facebook/bart-base --out_dir artifacts/llm_extraction
+```
+
+#### Phase 2: Compare models using existing graphs
+
+```bash
+# Compare different models using existing graphs (no LLM calls)
+python crashtransformer.py run --csv crashes.csv --model facebook/bart-base --out_dir artifacts/bart_comparison --skip_llm
+python crashtransformer.py run --csv crashes.csv --model t5-base --out_dir artifacts/t5_comparison --skip_llm
+```
+
+**Benefits:**
+
+- **Reduces LLM costs by ~80%** for multi-model comparisons
+- **Ensures consistent graphs** across all model evaluations  
+- **Enables fair comparison** between models using identical graph structures
+
 See `CLI_REFERENCE.md` for full command/flag list.
 
 ## 📊 Input Requirements
