@@ -1,5 +1,6 @@
 # neo4j_io.py
 
+import json
 from typing import Dict, Any, Iterable, Optional
 from neo4j import GraphDatabase
 
@@ -107,6 +108,10 @@ class Neo4jSink:
             evid = ev.get("id")
             if not evid:
                 continue
+            # Serialize attributes to JSON string to avoid Map{} error
+            attributes = ev.get("attributes") or {}
+            serialized_attributes = json.dumps(attributes) if attributes else None
+            
             tx.run(
                 """
                 MERGE (e:Event {id: $id})
@@ -120,7 +125,7 @@ class Neo4jSink:
                 MERGE (c)-[:HAS_EVENT]->(e)
                 """,
                 id=evid, type=ev.get("type"), label=ev.get("label"),
-                attributes=ev.get("attributes"), confidence=ev.get("confidence"),
+                attributes=serialized_attributes, confidence=ev.get("confidence"),
                 evidence_span=ev.get("evidence_span"),
                 crash_id=str(crash.get("crash_id")),
             )
@@ -169,6 +174,9 @@ class Neo4jSink:
                     start=start, end=end, impact_config=props.get("impact_config"),
                 )
             else:
+                # Serialize complex properties as JSON strings to avoid Map{} error
+                serialized_props = {k: json.dumps(v) if isinstance(v, (dict, list)) else v 
+                                  for k, v in props.items()}
                 tx.run(
                     """
                     MATCH (a {id: $start})
@@ -176,7 +184,7 @@ class Neo4jSink:
                     MERGE (a)-[rel:`%s`]->(b)
                     SET rel += $props
                     """ % rtype,
-                    start=start, end=end, props=props
+                    start=start, end=end, props=serialized_props
                 )
 
     def upsert_summary(self, summary_record: Dict[str, Any]):
@@ -186,6 +194,11 @@ class Neo4jSink:
     @staticmethod
     def _upsert_summary_tx(tx, record: Dict[str, Any]):
         cid = record["Crash_ID"]
+        
+        # Serialize metrics to JSON string to avoid Map{} error
+        metrics = record.get("metrics") or {}
+        serialized_metrics = json.dumps(metrics) if metrics else None
+        
         tx.run(
             """
             MERGE (s:Summary {crash_id: $cid})
@@ -204,7 +217,7 @@ class Neo4jSink:
             cid=str(cid),
             best_summary=record.get("best_summary"),
             plan_lines=record.get("plan_lines"),
-            metrics=record.get("metrics"),
+            metrics=serialized_metrics,
             extract_runtime_sec=record.get("extract_runtime_sec"),
             extract_total_tokens=record.get("extract_total_tokens"),
             summarizer_runtime_sec=record.get("summarizer_runtime_sec"),

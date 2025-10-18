@@ -70,6 +70,43 @@ def run_data_preparation():
         return False
     return True
 
+def clean_database():
+    """Clean Neo4j database"""
+    try:
+        from src.utils.config import config
+        from src.utils.neo4j_io import Neo4jSink
+        
+        # Reload config to get latest environment variables
+        config.reload()
+        
+        if not config.neo4j_enabled:
+            print("⚠️ Neo4j is not enabled, skipping database cleanup")
+            return True
+            
+        print("🗄️ Connecting to Neo4j database...")
+        sink = Neo4jSink(
+            uri=config.neo4j_uri,
+            user=config.neo4j_user,
+            password=config.neo4j_password
+        )
+        
+        print("🧹 Clearing all data from Neo4j database...")
+        with sink._driver.session() as session:
+            # Delete all nodes and relationships
+            session.run("MATCH (n) DETACH DELETE n")
+            print("✅ All nodes and relationships deleted")
+            
+        sink.close()
+        print("✅ Neo4j database cleaned successfully!")
+        return True
+        
+    except ImportError as e:
+        print(f"❌ Error importing Neo4j module: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Database cleanup failed: {e}")
+        return False
+
 def show_help():
     """Show help information"""
     print("""
@@ -81,6 +118,7 @@ MAIN COMMANDS:
   run            Execute the crash analysis pipeline  
   train         Fine-tune models for crash summarization
   prepare-data   Prepare training data from pipeline outputs
+  clean-db       Clear Neo4j database (removes all data)
   docs           Open local HTML documentation
   help           Show this help message
 
@@ -197,6 +235,10 @@ def main():
     elif command == "docs":
         # Build and serve HTML docs from docs/*.md
         run_docs()
+        
+    elif command == "clean-db":
+        # Clean Neo4j database
+        clean_database()
         
     elif command in ["help", "--help", "-h"]:
         show_help()

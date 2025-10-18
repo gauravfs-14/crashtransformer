@@ -1,6 +1,6 @@
 # crash_graph_llm.py
 
-from typing import List, Optional, Dict, Any, Tuple
+from typing import List, Optional, Dict, Any, Tuple, Literal
 from pydantic import BaseModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -22,7 +22,7 @@ except Exception:
 class CrashEntity(BaseModel):
     """Entity node such as vehicle, driver, or location"""
     id: str
-    label: str
+    label: Literal["VEHICLE", "DRIVER", "ROAD", "LOCATION", "TRAFFIC_CONTROL", "PEDESTRIAN", "CYCLIST", "OTHER"]
     unit_id: Optional[str] = None
     mention_text: Optional[str] = None
     name: Optional[str] = None
@@ -36,7 +36,7 @@ class CrashEvent(BaseModel):
     """Event node like collision or violation"""
     id: str
     label: str
-    type: str
+    type: Literal["VIOLATION", "COLLISION", "VEHICLE_STATE", "VEHICLE_MOVEMENT", "TRAFFIC_VIOLATION", "DISTRACTED_DRIVING", "SPEED_VIOLATION", "LANE_CHANGE", "TURNING", "STOPPING", "OTHER"]
     attributes: Dict[str, Any]
     confidence: Optional[float] = None
     evidence_span: Optional[str] = None
@@ -46,7 +46,7 @@ class CrashRelationship(BaseModel):
     """Edge connecting nodes"""
     start: str
     end: str
-    type: str
+    type: Literal["PARTICIPATED_IN", "CAUSES", "HIT", "FOLLOWS", "PRECEDES", "LOCATED_AT", "DRIVES", "PASSENGER_IN", "WITNESS_TO", "INVOLVED_IN", "OTHER"]
     properties: Dict[str, Any]
 
 
@@ -122,7 +122,7 @@ def get_default_structured_llm():
 TOOL_NAME = "emit_crash_graph"
 
 examples = [
-    # ===== Example 1 =====
+    # ===== Example 1: Rear-End Collision =====
     HumanMessage(
         content="Crash 19955047: Unit 2 was stationary at a red light on S. Texas Blvd. Unit 1 failed to control speed and struck Unit 2 on the back end.",
         name="example_user",
@@ -138,28 +138,31 @@ examples = [
                         "crash_id": "19955047",
                         "latitude": 26.15526348,
                         "longitude": -97.99060556,
-                        "crash_date": "1/1/24",
+                        "crash_date": "2024-01-01",
                         "day_of_week": "MON",
-                        "crash_time": "2:06 AM",
+                        "crash_time": "02:06:00",
                         "county": "Hidalgo",
                         "city": "Weslaco",
                         "sae_autonomy_level": "2",
                         "crash_severity": "Not Injured",
-                        "raw_narrative": "Unit 2 was stationary... Unit 1 failed to control speed and struck Unit 2.",
+                        "raw_narrative": "Unit 2 was stationary at a red light on S. Texas Blvd. Unit 1 failed to control speed and struck Unit 2 on the back end.",
+                        "source": "police_report"
                     },
                     "entities": [
-                        {"id": "19955047:U1", "label": "Vehicle", "unit_id": "U1"},
-                        {"id": "19955047:U2", "label": "Vehicle", "unit_id": "U2"},
-                        {"id": "19955047:L1", "label": "Location", "name": "600 block of S. Texas Blvd", "city": "Weslaco"},
+                        {"id": "19955047:U1", "label": "VEHICLE", "unit_id": "1", "name": "Unit 1"},
+                        {"id": "19955047:U2", "label": "VEHICLE", "unit_id": "2", "name": "Unit 2"},
+                        {"id": "19955047:L1", "label": "ROAD", "name": "S. Texas Blvd", "city": "Weslaco"}
                     ],
                     "events": [
-                        {"id": "19955047:E1", "label": "Event", "type": "Violation", "attributes": {"reason": "failed to control speed"}},
-                        {"id": "19955047:E2", "label": "Event", "type": "Collision", "attributes": {"impact_config": "rear_end"}},
+                        {"id": "19955047:E1", "label": "Stationary at Red Light", "type": "VEHICLE_STATE", "attributes": {}, "evidence_span": "Unit 2 was stationary at a red light"},
+                        {"id": "19955047:E2", "label": "Failure to Control Speed", "type": "VIOLATION", "attributes": {}, "evidence_span": "Unit 1 failed to control speed"},
+                        {"id": "19955047:E3", "label": "Rear-End Collision", "type": "COLLISION", "attributes": {}, "evidence_span": "struck Unit 2 on the back end"}
                     ],
                     "relationships": [
-                        {"start": "19955047:U1", "end": "19955047:E1", "type": "PARTICIPATED_IN", "properties": {"role": "Agent"}},
-                        {"start": "19955047:U1", "end": "19955047:U2", "type": "HIT", "properties": {"impact_config": "fd-bd"}},
-                        {"start": "19955047:E1", "end": "19955047:E2", "type": "CAUSES", "properties": {"confidence": 0.9}},
+                        {"start": "19955047:U2", "end": "19955047:E1", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19955047:U1", "end": "19955047:E2", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19955047:E2", "end": "19955047:E3", "type": "CAUSES", "properties": {}},
+                        {"start": "19955047:U1", "end": "19955047:U2", "type": "HIT", "properties": {}}
                     ],
                 },
                 "id": "tool-1",
@@ -168,9 +171,9 @@ examples = [
     ),
     ToolMessage(content="", tool_call_id="tool-1"),
 
-    # ===== Example 2 =====
+    # ===== Example 2: Intersection Collision =====
     HumanMessage(
-        content="Crash 19955369: Unit 1 failed to control speed and collided with Unit 2 on LBJ Fwy.",
+        content="Crash 19955369: Unit 1 was traveling eastbound on Main Street. Unit 2 was traveling northbound on Oak Avenue. Unit 1 failed to yield at the stop sign and collided with Unit 2 at the intersection.",
         name="example_user",
     ),
     AIMessage(
@@ -184,28 +187,34 @@ examples = [
                         "crash_id": "19955369",
                         "latitude": 32.92553538,
                         "longitude": -96.80385791,
-                        "crash_date": "1/2/24",
+                        "crash_date": "2024-01-02",
                         "day_of_week": "TUE",
-                        "crash_time": "3:37 PM",
+                        "crash_time": "15:37:00",
                         "county": "Dallas",
                         "city": "Dallas",
                         "sae_autonomy_level": "1",
                         "crash_severity": "Not Injured",
-                        "raw_narrative": "Unit 1 failed to control speed and collided with Unit 2 on LBJ Fwy.",
+                        "raw_narrative": "Unit 1 was traveling eastbound on Main Street. Unit 2 was traveling northbound on Oak Avenue. Unit 1 failed to yield at the stop sign and collided with Unit 2 at the intersection.",
+                        "source": "police_report"
                     },
                     "entities": [
-                        {"id": "19955369:U1", "label": "Vehicle", "unit_id": "U1"},
-                        {"id": "19955369:U2", "label": "Vehicle", "unit_id": "U2"},
-                        {"id": "19955369:L1", "label": "Location", "name": "6000 block of Lyndon B Johnson Fwy", "city": "Dallas"},
+                        {"id": "19955369:U1", "label": "VEHICLE", "unit_id": "1", "name": "Unit 1"},
+                        {"id": "19955369:U2", "label": "VEHICLE", "unit_id": "2", "name": "Unit 2"},
+                        {"id": "19955369:L1", "label": "ROAD", "name": "Main Street", "city": "Dallas"},
+                        {"id": "19955369:L2", "label": "ROAD", "name": "Oak Avenue", "city": "Dallas"}
                     ],
                     "events": [
-                        {"id": "19955369:E1", "label": "Event", "type": "Violation", "attributes": {"reason": "failed to control speed"}},
-                        {"id": "19955369:E2", "label": "Event", "type": "Collision", "attributes": {"impact_config": "rear_end"}},
+                        {"id": "19955369:E1", "label": "Eastbound Travel", "type": "VEHICLE_MOVEMENT", "attributes": {}, "evidence_span": "Unit 1 was traveling eastbound on Main Street"},
+                        {"id": "19955369:E2", "label": "Northbound Travel", "type": "VEHICLE_MOVEMENT", "attributes": {}, "evidence_span": "Unit 2 was traveling northbound on Oak Avenue"},
+                        {"id": "19955369:E3", "label": "Right-of-Way Violation", "type": "VIOLATION", "attributes": {}, "evidence_span": "Unit 1 failed to yield at the stop sign"},
+                        {"id": "19955369:E4", "label": "Intersection Collision", "type": "COLLISION", "attributes": {}, "evidence_span": "collided with Unit 2 at the intersection"}
                     ],
                     "relationships": [
-                        {"start": "19955369:U1", "end": "19955369:E1", "type": "PARTICIPATED_IN", "properties": {"role": "Agent"}},
-                        {"start": "19955369:E1", "end": "19955369:E2", "type": "CAUSES", "properties": {"marked": True}},
-                        {"start": "19955369:U1", "end": "19955369:U2", "type": "HIT", "properties": {"impact_config": "fd-bd"}},
+                        {"start": "19955369:U1", "end": "19955369:E1", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19955369:U2", "end": "19955369:E2", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19955369:U1", "end": "19955369:E3", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19955369:E3", "end": "19955369:E4", "type": "CAUSES", "properties": {}},
+                        {"start": "19955369:U1", "end": "19955369:U2", "type": "HIT", "properties": {}}
                     ],
                 },
                 "id": "tool-2",
@@ -214,9 +223,9 @@ examples = [
     ),
     ToolMessage(content="", tool_call_id="tool-2"),
 
-    # ===== Example 3 =====
+    # ===== Example 3: Lane Change Collision =====
     HumanMessage(
-        content="Crash 19956614: Unit 1 failed to yield from a private drive and collided with Unit 2 on Harris near Pasadena Blvd.",
+        content="Crash 19956614: Unit 1 was traveling southbound on Interstate 35 in the left lane. Unit 2 was traveling southbound on Interstate 35 in the right lane. Unit 1 attempted to change lanes without checking blind spots and collided with Unit 2. The driver admitted to being distracted by a cell phone.",
         name="example_user",
     ),
     AIMessage(
@@ -230,28 +239,37 @@ examples = [
                         "crash_id": "19956614",
                         "latitude": 29.69813481,
                         "longitude": -95.20085379,
-                        "crash_date": "1/3/24",
+                        "crash_date": "2024-01-03",
                         "day_of_week": "WED",
-                        "crash_time": "6:49 AM",
+                        "crash_time": "06:49:00",
                         "county": "Harris",
-                        "city": "Pasadena",
+                        "city": "Houston",
                         "sae_autonomy_level": "1",
                         "crash_severity": "Not Injured",
-                        "raw_narrative": "Unit 1 failed to yield from private drive and collided with Unit 2.",
+                        "raw_narrative": "Unit 1 was traveling southbound on Interstate 35 in the left lane. Unit 2 was traveling southbound on Interstate 35 in the right lane. Unit 1 attempted to change lanes without checking blind spots and collided with Unit 2. The driver admitted to being distracted by a cell phone.",
+                        "source": "police_report"
                     },
                     "entities": [
-                        {"id": "19956614:U1", "label": "Vehicle", "unit_id": "U1"},
-                        {"id": "19956614:U2", "label": "Vehicle", "unit_id": "U2"},
-                        {"id": "19956614:L1", "label": "Location", "name": "900 Harris near Pasadena Blvd", "city": "Pasadena"},
+                        {"id": "19956614:U1", "label": "VEHICLE", "unit_id": "1", "name": "Unit 1"},
+                        {"id": "19956614:U2", "label": "VEHICLE", "unit_id": "2", "name": "Unit 2"},
+                        {"id": "19956614:L1", "label": "ROAD", "name": "Interstate 35", "city": "Houston"},
+                        {"id": "19956614:D1", "label": "DRIVER", "name": "Unit 1 Driver"}
                     ],
                     "events": [
-                        {"id": "19956614:E1", "label": "Event", "type": "Violation", "attributes": {"reason": "failed to yield"}},
-                        {"id": "19956614:E2", "label": "Event", "type": "Collision", "attributes": {"impact_config": "side_impact"}},
+                        {"id": "19956614:E1", "label": "Southbound Travel Left Lane", "type": "VEHICLE_MOVEMENT", "attributes": {}, "evidence_span": "Unit 1 was traveling southbound on Interstate 35 in the left lane"},
+                        {"id": "19956614:E2", "label": "Southbound Travel Right Lane", "type": "VEHICLE_MOVEMENT", "attributes": {}, "evidence_span": "Unit 2 was traveling southbound on Interstate 35 in the right lane"},
+                        {"id": "19956614:E3", "label": "Distracted Driving", "type": "VIOLATION", "attributes": {}, "evidence_span": "admitted to being distracted by a cell phone"},
+                        {"id": "19956614:E4", "label": "Unsafe Lane Change", "type": "VIOLATION", "attributes": {}, "evidence_span": "attempted to change lanes without checking blind spots"},
+                        {"id": "19956614:E5", "label": "Lane Change Collision", "type": "COLLISION", "attributes": {}, "evidence_span": "collided with Unit 2"}
                     ],
                     "relationships": [
-                        {"start": "19956614:U1", "end": "19956614:E1", "type": "PARTICIPATED_IN", "properties": {"role": "Agent"}},
-                        {"start": "19956614:E1", "end": "19956614:E2", "type": "CAUSES", "properties": {"marked": True}},
-                        {"start": "19956614:U1", "end": "19956614:U2", "type": "HIT", "properties": {"impact_config": "fr-rbq"}},
+                        {"start": "19956614:U1", "end": "19956614:E1", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19956614:U2", "end": "19956614:E2", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19956614:D1", "end": "19956614:E3", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19956614:U1", "end": "19956614:E4", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19956614:E3", "end": "19956614:E4", "type": "CAUSES", "properties": {}},
+                        {"start": "19956614:E4", "end": "19956614:E5", "type": "CAUSES", "properties": {}},
+                        {"start": "19956614:U1", "end": "19956614:U2", "type": "HIT", "properties": {}}
                     ],
                 },
                 "id": "tool-3",
@@ -268,9 +286,10 @@ examples = [
 
 system_prompt = (
     "You are an expert transportation crash data analyst. "
-    "Given a crash narrative and metadata, extract entities (vehicles, locations), "
-    "events (violations, collisions), and causal relationships into a graph. "
-    "Return your answer as a structured JSON tool call under the schema 'CrashGraph'."
+    "Extract entities (vehicles, locations), events (violations, collisions), and causal relationships from crash narratives. "
+    "Focus on CAUSES relationships between events. "
+    "Include evidence_span for each event and confidence scores. "
+    "Return structured JSON following the CrashGraph schema."
 )
 
 
@@ -393,6 +412,14 @@ def analyze_crash_with_usage(narrative_or_formatted: str, metadata: Dict[str, An
             formatted_prompt = prompt.format(examples=examples, input=crash_text)
             result = custom_llm.invoke(formatted_prompt)
             
+            # Check if result is None
+            if result is None:
+                raise ValueError(f"LLM returned None for crash {crash_id}. This might be due to content filtering or API issues.")
+            
+            # Additional check for structured output
+            if not hasattr(result, 'json') and not hasattr(result, 'dict'):
+                raise ValueError(f"LLM result is not a valid structured output for crash {crash_id}. Result type: {type(result)}")
+            
             end = time.time()
             usage = llm_provider.get_usage_stats(result, start, end)
             return result, usage
@@ -465,7 +492,7 @@ if __name__ == "__main__":
 
 # Create examples with summaries
 examples_with_summary = [
-    # Modify first example to include summary
+    # ===== Example 1: Rear-End Collision with Summary =====
     HumanMessage(
         content="Crash 19955047: Unit 2 was stationary at a red light on S. Texas Blvd. Unit 1 failed to control speed and struck Unit 2 on the back end.",
         name="example_user",
@@ -481,30 +508,33 @@ examples_with_summary = [
                         "crash_id": "19955047",
                         "latitude": 26.15526348,
                         "longitude": -97.99060556,
-                        "crash_date": "1/1/24",
+                        "crash_date": "2024-01-01",
                         "day_of_week": "MON",
-                        "crash_time": "2:06 AM",
+                        "crash_time": "02:06:00",
                         "county": "Hidalgo",
                         "city": "Weslaco",
                         "sae_autonomy_level": "2",
                         "crash_severity": "Not Injured",
-                        "raw_narrative": "Unit 2 was stationary... Unit 1 failed to control speed and struck Unit 2.",
+                        "raw_narrative": "Unit 2 was stationary at a red light on S. Texas Blvd. Unit 1 failed to control speed and struck Unit 2 on the back end.",
+                        "source": "police_report"
                     },
                     "entities": [
-                        {"id": "19955047:U1", "label": "Vehicle", "unit_id": "U1"},
-                        {"id": "19955047:U2", "label": "Vehicle", "unit_id": "U2"},
-                        {"id": "19955047:L1", "label": "Location", "name": "600 block of S. Texas Blvd", "city": "Weslaco"},
+                        {"id": "19955047:U1", "label": "VEHICLE", "unit_id": "1", "name": "Unit 1"},
+                        {"id": "19955047:U2", "label": "VEHICLE", "unit_id": "2", "name": "Unit 2"},
+                        {"id": "19955047:L1", "label": "ROAD", "name": "S. Texas Blvd", "city": "Weslaco"}
                     ],
                     "events": [
-                        {"id": "19955047:E1", "label": "Event", "type": "Violation", "attributes": {"reason": "failed to control speed"}},
-                        {"id": "19955047:E2", "label": "Event", "type": "Collision", "attributes": {"impact_config": "rear_end"}},
+                        {"id": "19955047:E1", "label": "Stationary at Red Light", "type": "VEHICLE_STATE", "attributes": {}, "evidence_span": "Unit 2 was stationary at a red light"},
+                        {"id": "19955047:E2", "label": "Failure to Control Speed", "type": "VIOLATION", "attributes": {}, "evidence_span": "Unit 1 failed to control speed"},
+                        {"id": "19955047:E3", "label": "Rear-End Collision", "type": "COLLISION", "attributes": {}, "evidence_span": "struck Unit 2 on the back end"}
                     ],
                     "relationships": [
-                        {"start": "19955047:U1", "end": "19955047:E1", "type": "PARTICIPATED_IN", "properties": {"role": "Agent"}},
-                        {"start": "19955047:U1", "end": "19955047:U2", "type": "HIT", "properties": {"impact_config": "fd-bd"}},
-                        {"start": "19955047:E1", "end": "19955047:E2", "type": "CAUSES", "properties": {"confidence": 0.9}},
+                        {"start": "19955047:U2", "end": "19955047:E1", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19955047:U1", "end": "19955047:E2", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19955047:E2", "end": "19955047:E3", "type": "CAUSES", "properties": {}},
+                        {"start": "19955047:U1", "end": "19955047:U2", "type": "HIT", "properties": {}}
                     ],
-                    "summary": "Unit 1 failed to control speed while traveling north and struck the rear end of Unit 2, which was stationary at a red light on S. Texas Blvd."
+                    "summary": "A rear-end collision occurred when Unit 1 failed to control speed and struck Unit 2, which was stationary at a red light on S. Texas Blvd."
                 },
                 "id": "tool-1",
             }
@@ -555,7 +585,7 @@ def analyze_crash_with_summary_and_usage(narrative_or_formatted: str, metadata: 
                 ])
                 
                 # Format the prompt with examples and input
-                formatted_prompt = prompt.format(examples=examples, input=crash_text)
+                formatted_prompt = prompt.format(examples=examples_with_summary, input=crash_text)
                 result = custom_llm.invoke(formatted_prompt)
             except Exception as e:
                 if logger:
@@ -563,13 +593,13 @@ def analyze_crash_with_summary_and_usage(narrative_or_formatted: str, metadata: 
                 # Fallback to default
                 llm, _ = get_default_structured_llm()
                 result = llm.invoke({
-                    "examples": examples,
+                    "examples": examples_with_summary,
                     "input": crash_text
                 })
         else:
             llm, _ = get_default_structured_llm()
             result = llm.invoke({
-                "examples": examples,
+                "examples": examples_with_summary,
                 "input": crash_text
             })
         

@@ -157,6 +157,8 @@ class GoogleProvider(BaseLLMProvider):
             google_api_key=self.api_key,
             temperature=0,
             convert_system_message_to_human=True,  # Avoid system message issues
+            max_output_tokens=8192,  # Increase token limit to prevent truncation
+            max_tokens=8192,  # Alternative parameter name
             **self.kwargs
         )
     
