@@ -56,3 +56,10 @@ The pipeline writes artifacts under `artifacts/` (or `--out_dir`). Structure may
 ## Neo4j
 
 If enabled, nodes and relationships are upserted with constraints and a `Summary` node linked via `HAS_SUMMARY`.
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Neo4j Guide](NEO4J_GUIDE.md) - Graph database integration  
+**Next:** [Cost & Performance](COST_PERFORMANCE.md) - Cost optimization guide

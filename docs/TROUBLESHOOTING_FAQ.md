@@ -68,3 +68,10 @@ A: Use [FINE_TUNING_GUIDE.md](FINE_TUNING_GUIDE.md). Prepare data, train, then p
 
 **Q: How do I open documentation?**
 A: `python crashtransformer.py docs` opens the local HTML documentation in your browser.
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Fine-Tuning Guide](FINE_TUNING_GUIDE.md) - Model training  
+**Next:** [Contributing](../CONTRIBUTING.md) - How to contribute to the project

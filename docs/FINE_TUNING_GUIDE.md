@@ -197,7 +197,7 @@ nvidia-smi -l 1
 
 ## 📁 Output Structure
 
-```
+```text
 fine_tuned_models/
 ├── final_model/           # Final trained model
 │   ├── config.json
@@ -262,3 +262,10 @@ python crashtransformer.py run --csv large_dataset.csv --fine_tuned_model fine_t
 ---
 
 **🎯 Happy Fine-Tuning!** Your crash summarization model will be much more effective with domain-specific training! 🚗💥🤖
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Cost & Performance](COST_PERFORMANCE.md) - Cost optimization guide  
+**Next:** [Troubleshooting & FAQ](TROUBLESHOOTING_FAQ.md) - Common issues and solutions

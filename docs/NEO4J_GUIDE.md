@@ -442,3 +442,10 @@ ORDER BY c.city;
 ```
 
 This comprehensive guide provides everything you need to effectively use Neo4j with CrashTransformer for advanced crash data analysis and pattern discovery.
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Providers Guide](PROVIDERS_GUIDE.md) - LLM provider setup  
+**Next:** [Outputs](OUTPUTS.md) - Output structure and artifacts

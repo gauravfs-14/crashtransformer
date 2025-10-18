@@ -88,3 +88,10 @@ python crashtransformer.py run --csv crashes.csv --llm_provider anthropic
 python crashtransformer.py run --csv crashes.csv --neo4j_enabled --log_level DEBUG
 python crashtransformer.py run --csv crashes.csv --batch_models facebook/bart-base t5-base
 ```
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Usage Guide](USAGE_GUIDE.md) - How to run the pipeline  
+**Next:** [Providers Guide](PROVIDERS_GUIDE.md) - LLM provider setup

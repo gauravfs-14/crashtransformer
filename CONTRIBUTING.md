@@ -36,4 +36,11 @@ Thanks for your interest in contributing!
 ## Security
 
 - Never include secrets in issues or PRs
-- See `SECURITY.md` for reporting vulnerabilities
+- Report security vulnerabilities via GitHub issues (mark as private)
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Changelog](docs/CHANGELOG.md) - Version history  
+**Next:** [Start Here](docs/index.md) - Documentation index

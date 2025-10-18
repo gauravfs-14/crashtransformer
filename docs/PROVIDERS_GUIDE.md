@@ -68,3 +68,10 @@ Tips:
 ## Cost tracking
 
 Enable/inspect cost tracking via `summaries_metrics.csv` and `cost_report.json`. See [COST_PERFORMANCE.md](COST_PERFORMANCE.md).
+
+---
+
+## 📖 Navigation
+
+**Previous:** [CLI Reference](CLI_REFERENCE.md) - Complete command reference  
+**Next:** [Neo4j Guide](NEO4J_GUIDE.md) - Graph database integration

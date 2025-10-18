@@ -30,3 +30,10 @@ Crash_ID,Latitude,Longitude,CrashDate,DayOfWeek,CrashTime,County,City,SAE_Autono
 - Remove PII and unrelated content from narratives
 - Ensure consistent date/time formats
 - Large files are supported; consider batching for cost/performance
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Interactive Setup](INTERACTIVE_SETUP.md) - Guided configuration  
+**Next:** [Usage Guide](USAGE_GUIDE.md) - How to run the pipeline

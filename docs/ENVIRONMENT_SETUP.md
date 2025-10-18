@@ -74,3 +74,10 @@ python crashtransformer.py run --csv crashes.csv \
 - Do not pass API keys via CLI flags.
 - Store secrets only in `.env` or a secret manager.
 - Avoid committing `.env`; use `.env.example` for sharing safe defaults.
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Introduction](INTRODUCTION.md) - Learn what CrashTransformer does  
+**Next:** [Interactive Setup](INTERACTIVE_SETUP.md) - Guided configuration wizard

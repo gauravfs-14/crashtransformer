@@ -1,6 +1,6 @@
 # CrashTransformer
 
-> Start with [00_START_HERE.md](00_START_HERE.md) for the ordered guide.
+> Start with [index.md](index.md) for the ordered guide.
 
 ## What this project does
 
@@ -238,3 +238,10 @@ sum_output_tokens = len(tok.encode(result["best"]["summary"])) if result.get("be
 - Process: LLM extracts a structured crash graph → plan-conditioned HF model generates and scores summaries → artifacts written; optional Neo4j upserts.
 - Outputs: JSONL/JSON graphs, summaries with metrics, CSV metrics table, logs, cost report, and optional Neo4j graph.
 - Usage: `python crashtransformer.py run --csv your_data.csv [--llm_provider ...] [--neo4j_enabled] [--batch_models ...]`.
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Start Here](index.md) - Get started with CrashTransformer  
+**Next:** [Environment Setup](ENVIRONMENT_SETUP.md) - Configure your environment

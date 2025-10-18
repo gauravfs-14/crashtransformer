@@ -1,6 +1,6 @@
 # 📖 CrashTransformer Usage Guide
 
-> **Suggested reading path**: [00_START_HERE.md](00_START_HERE.md) → [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) → [INTERACTIVE_SETUP.md](INTERACTIVE_SETUP.md) → this guide
+> **Suggested reading path**: [index.md](index.md) → [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) → [INTERACTIVE_SETUP.md](INTERACTIVE_SETUP.md) → this guide
 
 Complete guide for using CrashTransformer's main entry point with comprehensive examples and best practices.
 
@@ -178,7 +178,7 @@ See [OUTPUTS.md](OUTPUTS.md) for structure and examples.
 
 ## 🔒 Configuration
 
-See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) and [SECURITY.md](SECURITY.md).
+See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) for security guidance.
 
 ## 🎯 Use Cases
 
@@ -191,3 +191,10 @@ See [TROUBLESHOOTING_FAQ.md](TROUBLESHOOTING_FAQ.md).
 ## 📚 Additional Resources
 
 - [PROVIDERS_GUIDE.md](PROVIDERS_GUIDE.md), [NEO4J_GUIDE.md](NEO4J_GUIDE.md), [COST_PERFORMANCE.md](COST_PERFORMANCE.md), [FINE_TUNING_GUIDE.md](FINE_TUNING_GUIDE.md)
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Data Specification](DATA_SPEC.md) - Input data requirements  
+**Next:** [CLI Reference](CLI_REFERENCE.md) - Complete command reference

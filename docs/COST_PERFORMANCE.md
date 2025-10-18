@@ -48,3 +48,10 @@ High-level guidance:
 
 - Track cost per 1,000 summaries over time
 - Compare providers/models using `summaries_metrics.csv`
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Outputs](OUTPUTS.md) - Output structure and artifacts  
+**Next:** [Fine-Tuning Guide](FINE_TUNING_GUIDE.md) - Model training

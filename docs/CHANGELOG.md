@@ -25,3 +25,10 @@ All notable changes to this project will be documented in this file.
 ## [0.1.0]
 
 - Initial public release of CrashTransformer
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Troubleshooting & FAQ](TROUBLESHOOTING_FAQ.md) - Common issues and solutions  
+**Next:** [Contributing](../CONTRIBUTING.md) - How to contribute to the project

@@ -26,9 +26,13 @@ Welcome! Follow this sequence for a smooth first run:
     - Train your own summarizer and use it in the pipeline
 12. [Troubleshooting & FAQ](TROUBLESHOOTING_FAQ.md)
     - Solve common issues quickly
-13. [Contributing](CONTRIBUTING.md)
+13. [Contributing](../CONTRIBUTING.md)
     - How to make changes and propose PRs
 14. [Changelog](CHANGELOG.md)
     - Track notable changes across versions
 
-Tip: You can also browse from the top navigation list on the docs index page.
+---
+
+## 📖 Navigation
+
+**Next:** [Introduction](INTRODUCTION.md) - Learn what CrashTransformer does and how it works

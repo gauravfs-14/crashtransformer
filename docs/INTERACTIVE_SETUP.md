@@ -78,3 +78,10 @@ make data
 ```bash
 python crashtransformer.py help
 ```
+
+---
+
+## 📖 Navigation
+
+**Previous:** [Environment Setup](ENVIRONMENT_SETUP.md) - Manual configuration  
+**Next:** [Data Specification](DATA_SPEC.md) - Input data requirements
