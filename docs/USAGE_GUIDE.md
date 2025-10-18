@@ -1,6 +1,6 @@
 # 📖 CrashTransformer Usage Guide
 
-> **Suggested reading path**: `00_START_HERE.md` → `ENVIRONMENT_SETUP.md` → `INTERACTIVE_SETUP.md` → this guide
+> **Suggested reading path**: [00_START_HERE.md](00_START_HERE.md) → [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) → [INTERACTIVE_SETUP.md](INTERACTIVE_SETUP.md) → this guide
 
 Complete guide for using CrashTransformer's main entry point with comprehensive examples and best practices.
 
@@ -44,7 +44,7 @@ python crashtransformer.py
 
 ## 🔧 Environment Setup
 
-See `ENVIRONMENT_SETUP.md` and `INTERACTIVE_SETUP.md`.
+See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) and [INTERACTIVE_SETUP.md](INTERACTIVE_SETUP.md).
 
 ### **Interactive Setup (Recommended)**
 
@@ -134,11 +134,11 @@ python crashtransformer.py run --csv crashes.csv --model t5-base --out_dir artif
 | **⚡ Faster Processing** | Skip expensive LLM calls in Phase 2 | Faster model comparison |
 | **📊 Better Analysis** | Isolates summarization performance from extraction quality | Clearer insights into model differences |
 
-> **Note**: See `CLI_REFERENCE.md` for complete command/flag reference.
+> **Note**: See [CLI_REFERENCE.md](CLI_REFERENCE.md) for complete command/flag reference.
 
 ## 📊 Input Requirements
 
-See `DATA_SPEC.md` for full details.
+See [DATA_SPEC.md](DATA_SPEC.md) for full details.
 
 ### **CSV Format**
 
@@ -161,7 +161,7 @@ Crash_ID,Latitude,Longitude,CrashDate,DayOfWeek,CrashTime,County,City,SAE_Autono
 
 ## 📈 Outputs Generated
 
-See `OUTPUTS.md` for structure and examples.
+See [OUTPUTS.md](OUTPUTS.md) for structure and examples.
 
 ### **File Outputs**
 
@@ -178,7 +178,7 @@ See `OUTPUTS.md` for structure and examples.
 
 ## 🔒 Configuration
 
-See `ENVIRONMENT_SETUP.md` and `SECURITY.md`.
+See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) and [SECURITY.md](SECURITY.md).
 
 ## 🎯 Use Cases
 
@@ -186,8 +186,8 @@ See `ENVIRONMENT_SETUP.md` and `SECURITY.md`.
 
 ## 🐛 Troubleshooting
 
-See `TROUBLESHOOTING_FAQ.md`.
+See [TROUBLESHOOTING_FAQ.md](TROUBLESHOOTING_FAQ.md).
 
 ## 📚 Additional Resources
 
-- `PROVIDERS_GUIDE.md`, `NEO4J_GUIDE.md`, `COST_PERFORMANCE.md`, `FINE_TUNING_GUIDE.md`
+- [PROVIDERS_GUIDE.md](PROVIDERS_GUIDE.md), [NEO4J_GUIDE.md](NEO4J_GUIDE.md), [COST_PERFORMANCE.md](COST_PERFORMANCE.md), [FINE_TUNING_GUIDE.md](FINE_TUNING_GUIDE.md)

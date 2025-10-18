@@ -119,7 +119,7 @@ MAIN COMMANDS:
   train         Fine-tune models for crash summarization
   prepare-data   Prepare training data from pipeline outputs
   clean-db       Clear Neo4j database (removes all data)
-  docs           Open local HTML documentation
+  docs           Convert docs to HTML and serve in browser
   help           Show this help message
 
 QUICK START:
@@ -140,21 +140,252 @@ For detailed documentation, run: python crashtransformer.py docs
 """)
 
 def run_docs():
-    """Simple docs serving - just open the docs_html directory if it exists"""
+    """Convert docs folder to HTML and serve in browser"""
+    import markdown
+    import webbrowser
+    from pathlib import Path
+    
+    docs_dir = os.path.join(os.path.dirname(__file__), 'docs')
     docs_html_dir = os.path.join(os.path.dirname(__file__), 'docs_html')
     
-    if not os.path.isdir(docs_html_dir):
-        print("❌ Docs HTML directory not found. Run 'make docs' first to build documentation.")
+    # Create docs_html directory if it doesn't exist
+    os.makedirs(docs_html_dir, exist_ok=True)
+    
+    print("📚 Converting documentation to HTML...")
+    
+    # Configure markdown with extensions
+    md = markdown.Markdown(
+        extensions=[
+            'markdown.extensions.toc',
+            'markdown.extensions.tables',
+            'markdown.extensions.fenced_code',
+            'markdown.extensions.codehilite',
+            'pymdownx.superfences',
+            'pymdownx.tabbed'
+        ],
+        extension_configs={
+            'markdown.extensions.toc': {
+                'permalink': True,
+                'permalink_title': 'Link to this section'
+            }
+        }
+    )
+    
+    # HTML template
+    html_template = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} - CrashTransformer Documentation</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }}
+        .container {{
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }}
+        h1, h2, h3, h4, h5, h6 {{
+            color: #2c3e50;
+            margin-top: 2em;
+            margin-bottom: 1em;
+        }}
+        h1 {{
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }}
+        h2 {{
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 5px;
+        }}
+        code {{
+            background-color: #f1f2f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }}
+        pre {{
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }}
+        pre code {{
+            background: none;
+            padding: 0;
+        }}
+        table {{
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }}
+        th, td {{
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }}
+        th {{
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }}
+        blockquote {{
+            border-left: 4px solid #3498db;
+            margin: 1em 0;
+            padding-left: 20px;
+            color: #7f8c8d;
+        }}
+        .nav {{
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }}
+        .nav a {{
+            color: #ecf0f1;
+            text-decoration: none;
+            margin-right: 20px;
+        }}
+        .nav a:hover {{
+            color: #3498db;
+        }}
+        .toc {{
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }}
+        .toc ul {{
+            margin: 0;
+            padding-left: 20px;
+        }}
+        .toc a {{
+            color: #2c3e50;
+            text-decoration: none;
+        }}
+        .toc a:hover {{
+            color: #3498db;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="index.html">🏠 Home</a>
+            <a href="00_START_HERE.html">🚀 Start Here</a>
+            <a href="INTRODUCTION.html">📖 Introduction</a>
+            <a href="USAGE_GUIDE.html">📋 Usage Guide</a>
+            <a href="CLI_REFERENCE.html">🧰 CLI Reference</a>
+            <a href="PROVIDERS_GUIDE.html">🤖 Providers</a>
+            <a href="NEO4J_GUIDE.html">🗄️ Neo4j</a>
+            <a href="OUTPUTS.html">📤 Outputs</a>
+            <a href="COST_PERFORMANCE.html">💰 Cost & Performance</a>
+            <a href="FINE_TUNING_GUIDE.html">🎯 Fine-tuning</a>
+            <a href="TROUBLESHOOTING_FAQ.html">🛠️ Troubleshooting</a>
+        </div>
+        {content}
+    </div>
+</body>
+</html>"""
+    
+    # Get all markdown files in docs directory
+    docs_path = Path(docs_dir)
+    md_files = list(docs_path.glob('*.md'))
+    
+    if not md_files:
+        print("❌ No markdown files found in docs directory")
         return False
     
+    # Convert each markdown file to HTML
+    converted_files = []
+    for md_file in md_files:
+        try:
+            with open(md_file, 'r', encoding='utf-8') as f:
+                md_content = f.read()
+            
+            # Convert markdown to HTML
+            html_content = md.convert(md_content)
+            
+            # Create HTML file
+            html_file = os.path.join(docs_html_dir, f"{md_file.stem}.html")
+            title = md_file.stem.replace('_', ' ').replace('-', ' ').title()
+            
+            with open(html_file, 'w', encoding='utf-8') as f:
+                f.write(html_template.format(title=title, content=html_content))
+            
+            converted_files.append(html_file)
+            print(f"✅ Converted: {md_file.name} → {os.path.basename(html_file)}")
+            
+        except Exception as e:
+            print(f"❌ Failed to convert {md_file.name}: {e}")
+            continue
+    
+    if not converted_files:
+        print("❌ No files were successfully converted")
+        return False
+    
+    # Create index.html if it doesn't exist
+    index_file = os.path.join(docs_html_dir, 'index.html')
+    if not os.path.exists(index_file):
+        index_content = html_template.format(
+            title="CrashTransformer Documentation",
+            content="""
+            <h1>🔧 CrashTransformer Documentation</h1>
+            <p>Welcome to the CrashTransformer documentation! This comprehensive guide will help you get started with AI-powered crash analysis.</p>
+            
+            <h2>📚 Quick Navigation</h2>
+            <ul>
+                <li><a href="00_START_HERE.html">🚀 Start Here</a> - Begin your journey with CrashTransformer</li>
+                <li><a href="INTRODUCTION.html">📖 Introduction</a> - Learn what CrashTransformer does</li>
+                <li><a href="USAGE_GUIDE.html">📋 Usage Guide</a> - Complete usage documentation</li>
+                <li><a href="CLI_REFERENCE.html">🧰 CLI Reference</a> - All available commands</li>
+                <li><a href="PROVIDERS_GUIDE.html">🤖 Providers Guide</a> - LLM provider setup</li>
+                <li><a href="NEO4J_GUIDE.html">🗄️ Neo4j Guide</a> - Graph database integration</li>
+                <li><a href="OUTPUTS.html">📤 Outputs</a> - Understanding results</li>
+                <li><a href="COST_PERFORMANCE.html">💰 Cost & Performance</a> - Optimization guide</li>
+                <li><a href="FINE_TUNING_GUIDE.html">🎯 Fine-tuning Guide</a> - Custom model training</li>
+                <li><a href="TROUBLESHOOTING_FAQ.html">🛠️ Troubleshooting FAQ</a> - Common issues and solutions</li>
+            </ul>
+            
+            <h2>🚀 Quick Start</h2>
+            <ol>
+                <li>Run <code>python crashtransformer.py setup</code> to configure your environment</li>
+                <li>Prepare your crash data in CSV format with required columns</li>
+                <li>Run <code>python crashtransformer.py run --csv your_data.csv</code> to analyze crashes</li>
+                <li>Check the results in the <code>artifacts/</code> directory</li>
+            </ol>
+            
+            <h2>💡 Need Help?</h2>
+            <p>If you encounter any issues, check the <a href="TROUBLESHOOTING_FAQ.html">Troubleshooting FAQ</a> or run <code>python crashtransformer.py help</code> for command-line assistance.</p>
+            """
+        )
+        
+        with open(index_file, 'w', encoding='utf-8') as f:
+            f.write(index_content)
+        
+        print(f"✅ Created: index.html")
+    
+    # Open in browser
     try:
-        import webbrowser
-        webbrowser.open(f"file://{os.path.abspath(docs_html_dir)}/index.html")
-        print(f"📚 Opening docs at: {docs_html_dir}/index.html")
+        webbrowser.open(f"file://{os.path.abspath(index_file)}")
+        print(f"📚 Documentation opened in browser: {index_file}")
+        print(f"📁 HTML files generated in: {docs_html_dir}")
         return True
     except Exception as e:
-        print(f"❌ Failed to open docs: {e}")
-        return False
+        print(f"❌ Failed to open browser: {e}")
+        print(f"📁 HTML files generated in: {docs_html_dir}")
+        print(f"🌐 Open manually: file://{os.path.abspath(index_file)}")
+        return True
 
 def main():
     """Main entry point for CrashTransformer"""
@@ -168,7 +399,7 @@ def main():
         print("3. Train model")
         print("4. Prepare training data")
         print("5. Show help")
-        print("6. Docs (open local documentation)")
+        print("6. Docs (convert docs to HTML and serve in browser)")
         print("7. Exit")
         
         choice = input("\nEnter your choice (1-7): ").strip()

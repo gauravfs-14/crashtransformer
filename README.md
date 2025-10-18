@@ -1,8 +1,8 @@
 # 🔧 CrashTransformer - AI-Powered Crash Analysis Pipeline
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Neo4j](https://img.shields.io/badge/Neo4j-4.0+-green.svg)](https://neo4j.com/)
+[![Neo4j](https://img.shields.io/badge/Neo4j-6.0+-green.svg)](https://neo4j.com/)
 
 CrashTransformer is a sophisticated AI system that processes vehicle crash narratives into structured causal summaries using Large Language Models and transformer-based summarization. It extracts structured crash graphs, generates high-quality summaries, and provides comprehensive analytics through multiple LLM providers and graph database integration.
 
@@ -30,9 +30,10 @@ python crashtransformer.py run --csv crashes.csv
 |---------|-------------|---------|
 | `setup` | Interactive environment configuration | `python crashtransformer.py setup` |
 | `run` | Execute crash analysis pipeline | `python crashtransformer.py run --csv crashes.csv` |
-| `validate` | Validate current configuration | `python crashtransformer.py validate` |
-| `install` | Install required dependencies | `python crashtransformer.py install` |
-| `examples` | Show usage examples | `python crashtransformer.py examples` |
+| `train` | Fine-tune summarization models | `python crashtransformer.py train --training_data data.csv` |
+| `prepare-data` | Prepare training data from outputs | `python crashtransformer.py prepare-data --source pipeline` |
+| `clean-db` | Clear Neo4j database | `python crashtransformer.py clean-db` |
+| `docs` | Open local HTML documentation | `python crashtransformer.py docs` |
 | `help` | Show comprehensive help | `python crashtransformer.py help` |
 
 ## 🎯 Core Features
@@ -43,8 +44,8 @@ python crashtransformer.py run --csv crashes.csv
 |----------|--------|-------|------|---------|----------|
 | **OpenAI** | GPT-4o, GPT-4o-mini, GPT-3.5-turbo | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | Balanced performance |
 | **Anthropic** | Claude-3 Opus, Sonnet, Haiku | ⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐⭐ | High-quality analysis |
-| **Google** | Gemini-1.5-Pro, Gemini-1.5-Flash | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Cost-effective processing |
-| **Groq** | Llama-3.1, Mixtral-8x7b | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | Fast inference |
+| **Google** | Gemini-2.0-Flash, Gemini-1.5-Pro | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Cost-effective processing |
+| **Groq** | Llama-3.1-70b, Mixtral-8x7b | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | Fast inference |
 | **Ollama** | Local models (Llama3, Mistral) | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ | Privacy-focused |
 | **XAI** | Grok-Beta, Grok-2 | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ | Latest models |
 
@@ -183,7 +184,7 @@ The system extracts structured crash graphs with entities, events, and causal re
 
 High-quality summaries with comprehensive quality metrics:
 
-```
+```text
 Input: "Unit 2 was stationary in the northbound lane. Unit 1 failed to control speed and struck Unit 2 on the back end."
 
 Output: "Unit 1 failed to control speed and struck the stationary Unit 2 from behind, causing a rear-end collision."
@@ -274,7 +275,7 @@ ENABLE_LOGGING=true
 
 ### **Project Structure**
 
-```
+```text
 crashtransformer/
 ├── crashtransformer.py              # Main entry point
 ├── src/                             # Source code
@@ -425,6 +426,6 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-**CrashTransformer** - Transforming crash narratives into actionable insights with AI! 🚗💥🤖
+## CrashTransformer
 
-*Built with ❤️ for transportation safety and data analysis*
+Transforming crash narratives into actionable insights with AI! 🚗💥🤖

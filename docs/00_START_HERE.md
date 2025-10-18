@@ -2,50 +2,33 @@
 
 Welcome! Follow this sequence for a smooth first run:
 
-1. Introduction
+1. [Introduction](INTRODUCTION.md)
    - See what the project does and the overall pipeline
-   - Link: `INTRODUCTION.md`
-2. Environment Setup
+2. [Environment Setup](ENVIRONMENT_SETUP.md)
    - Configure `.env` and dependencies
-   - Link: `ENVIRONMENT_SETUP.md`
-3. Interactive Setup (optional but recommended)
+3. [Interactive Setup](INTERACTIVE_SETUP.md) (optional but recommended)
    - Guided configuration with hidden input for secrets
-   - Link: `INTERACTIVE_SETUP.md`
-4. Data Specification
+4. [Data Specification](DATA_SPEC.md)
    - Prepare your CSV/XLSX with required columns
-   - Link: `DATA_SPEC.md`
-5. Usage Guide
+5. [Usage Guide](USAGE_GUIDE.md)
    - Run the pipeline, understand flags and options
-   - Link: `USAGE_GUIDE.md`
-6. CLI Reference
+6. [CLI Reference](CLI_REFERENCE.md)
    - Full command/flag reference
-   - Link: `CLI_REFERENCE.md`
-7. Providers Guide
+7. [Providers Guide](PROVIDERS_GUIDE.md)
    - LLM provider setup and model selection tips
-   - Link: `PROVIDERS_GUIDE.md`
-8. Neo4j Guide (optional)
+8. [Neo4j Guide](NEO4J_GUIDE.md) (optional)
    - Persist graphs and query with Cypher
-   - Link: `NEO4J_GUIDE.md`
-9. Outputs
+9. [Outputs](OUTPUTS.md)
    - Learn the artifacts and their structure
-   - Link: `OUTPUTS.md`
-10. Cost & Performance
+10. [Cost & Performance](COST_PERFORMANCE.md)
     - Optimize runtime and cost
-    - Link: `COST_PERFORMANCE.md`
-11. Fine-Tuning
+11. [Fine-Tuning](FINE_TUNING_GUIDE.md)
     - Train your own summarizer and use it in the pipeline
-    - Link: `FINE_TUNING_GUIDE.md`
-12. Troubleshooting & FAQ
+12. [Troubleshooting & FAQ](TROUBLESHOOTING_FAQ.md)
     - Solve common issues quickly
-    - Link: `TROUBLESHOOTING_FAQ.md`
-13. Security
-    - Handle secrets and data safely
-    - Link: `SECURITY.md`
-14. Contributing
+13. [Contributing](CONTRIBUTING.md)
     - How to make changes and propose PRs
-    - Link: `CONTRIBUTING.md`
-15. Changelog
+14. [Changelog](CHANGELOG.md)
     - Track notable changes across versions
-    - Link: `CHANGELOG.md`
 
 Tip: You can also browse from the top navigation list on the docs index page.

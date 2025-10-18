@@ -21,7 +21,7 @@ python crashtransformer.py install
 ## 🔑 LLM configuration
 
 ```bash
-LLM_PROVIDER=openai            # openai|anthropic|google|groq|ollama|grok
+LLM_PROVIDER=openai            # openai|anthropic|google|gemini|groq|ollama|grok
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o-mini
 ANTHROPIC_API_KEY=...

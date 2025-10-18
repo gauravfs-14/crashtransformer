@@ -1,6 +1,6 @@
 # Makefile for CrashTransformer - Simplified
 
-.PHONY: test full setup clean help
+.PHONY: test full setup docs clean help
 
 # Stop on any error
 .SHELLFLAGS := -e -o pipefail
@@ -43,12 +43,14 @@ help:
 	@echo "  test    - Run complete pipeline on 5-row test data (fast, cost-efficient)"
 	@echo "  full    - Run complete pipeline on full dataset (slow, comprehensive)"
 	@echo "  setup   - Setup environment and dependencies"
+	@echo "  docs    - Convert docs to HTML and serve in browser"
 	@echo "  clean   - Remove all generated artifacts and clear Neo4j database"
 	@echo "  help    - Show this help message"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make test    # Quick test with 5 rows"
 	@echo "  make full    # Full run with complete dataset"
+	@echo "  make docs    # Convert docs to HTML and serve in browser"
 	@echo ""
 	@echo "💡 Both targets are cost-optimized and reuse graphs to save ~80% on LLM API costs"
 
@@ -222,6 +224,11 @@ full-pipeline:
 	@$(PY) create_visualizations.py $(FT_T5_DIR) || (echo "❌ T5 visualization failed!" && exit 1)
 	
 	@echo "✅ Full pipeline completed successfully!"
+
+# Documentation
+docs:
+	@echo "📚 Converting documentation to HTML and serving in browser..."
+	@$(PY) crashtransformer.py docs
 
 # Utilities
 clean:

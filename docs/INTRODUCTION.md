@@ -1,14 +1,15 @@
 # CrashTransformer
 
-> Start with `00_START_HERE.md` for the ordered guide.
+> Start with [00_START_HERE.md](00_START_HERE.md) for the ordered guide.
 
-### What this project does
+## What this project does
 
 - Converts free-text police crash narratives into:
-  - Structured crash graphs (entities, events, causal edges).
-  - Concise causal summaries ranked by quality metrics.
-  - Optional storage in Neo4j for graph querying.
-  - Cost/logging/metrics artifacts for analysis.
+  - Structured crash graphs (entities, events, causal edges) using LLM extraction
+  - High-quality LLM-generated summaries for comparison and training
+  - Concise causal summaries from fine-tuned models ranked by quality metrics
+  - Optional storage in Neo4j for graph querying
+  - Cost/logging/metrics artifacts for analysis
 
 Key flow is orchestrated in `src/main_pipeline.py`:
 

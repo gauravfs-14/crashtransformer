@@ -17,11 +17,11 @@ Supported providers and required vars:
 - Google (Gemini)
   - `LLM_PROVIDER=google` or `gemini`
   - `GOOGLE_API_KEY`
-  - Model (e.g., `gemini-1.5-pro`)
+  - Model (e.g., `gemini-2.0-flash`)
 - Groq
   - `LLM_PROVIDER=groq`
   - `GROQ_API_KEY`
-  - Model (e.g., `llama-3.1-70b`)
+  - Model (e.g., `llama-3.1-70b-versatile`)
 - Ollama (local)
   - `LLM_PROVIDER=ollama`
   - Daemon running locally with pulled models (e.g., `llama3`)
@@ -67,4 +67,4 @@ Tips:
 
 ## Cost tracking
 
-Enable/inspect cost tracking via `summaries_metrics.csv` and `cost_report.json`. See `COST_PERFORMANCE.md`.
+Enable/inspect cost tracking via `summaries_metrics.csv` and `cost_report.json`. See [COST_PERFORMANCE.md](COST_PERFORMANCE.md).

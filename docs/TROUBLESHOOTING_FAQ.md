@@ -4,7 +4,7 @@
 
 ### Import error: setup/pipeline
 
-```
+```text
 ❌ Error importing setup module
 ```
 
@@ -13,7 +13,7 @@
 
 ### Configuration validation failed
 
-```
+```text
 ❌ Configuration validation failed
 ```
 
@@ -22,7 +22,7 @@
 
 ### Missing API key
 
-```
+```text
 ❌ OPENAI_API_KEY not set
 ```
 
@@ -31,7 +31,7 @@
 
 ### CSV file not found
 
-```
+```text
 ❌ CSV file not found
 ```
 
@@ -52,19 +52,19 @@
 ## FAQ
 
 **Q: Which columns are required in the CSV?**
-A: See `DATA_SPEC.md`; `Crash_ID`, coordinates, date/time, location fields, `SAE_Autonomy_Level`, `Crash_Severity`, `Narrative`.
+A: See [DATA_SPEC.md](DATA_SPEC.md); `Crash_ID`, coordinates, date/time, location fields, `SAE_Autonomy_Level`, `Crash_Severity`, `Narrative`.
 
 **Q: Where do I find outputs?**
-A: Under `artifacts/` by default, or `--out_dir` if set. See `OUTPUTS.md`.
+A: Under `artifacts/` by default, or `--out_dir` if set. See [OUTPUTS.md](OUTPUTS.md).
 
 **Q: Can I run locally without API keys?**
 A: Yes, with `LLM_PROVIDER=ollama` and local models installed. Quality depends on the chosen model.
 
 **Q: How do I persist to Neo4j?**
-A: Set `ENABLE_NEO4J=true` in `.env` or pass `--neo4j_enabled`. See `NEO4J_GUIDE.md`.
+A: Set `ENABLE_NEO4J=true` in `.env` or pass `--neo4j_enabled`. See [NEO4J_GUIDE.md](NEO4J_GUIDE.md).
 
 **Q: How do I fine-tune the summarizer?**
-A: Use `FINE_TUNING_GUIDE.md`. Prepare data, train, then pass `--fine_tuned_model` to `run`.
+A: Use [FINE_TUNING_GUIDE.md](FINE_TUNING_GUIDE.md). Prepare data, train, then pass `--fine_tuned_model` to `run`.
 
-**Q: How do I serve docs?**
-A: `python crashtransformer.py docs` builds `docs_html/` and serves at a local URL.
+**Q: How do I open documentation?**
+A: `python crashtransformer.py docs` opens the local HTML documentation in your browser.

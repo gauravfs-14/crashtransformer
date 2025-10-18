@@ -8,7 +8,7 @@ The pipeline writes artifacts under `artifacts/` (or `--out_dir`). Structure may
 - `crash_summaries.jsonl`: Per-crash plan lines, candidate summaries with metrics, best summary, and LLM summary
 - `summaries_metrics.csv`: Tabular metrics and usage/cost columns for both LLM and baseline models
 - `cost_report.json`: Aggregate cost analysis (if cost tracking enabled)
-- `logs/`: Timestamped processing logs
+- `logs/`: Timestamped processing logs with detailed processing information
 
 ## Key Features
 

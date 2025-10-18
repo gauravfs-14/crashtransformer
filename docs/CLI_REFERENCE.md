@@ -8,11 +8,9 @@ Entrypoint: `python crashtransformer.py <command> [options]`
 - `run`: Execute the crash analysis pipeline
 - `train`: Fine-tune summarization models
 - `prepare-data`: Build training datasets from pipeline outputs or synthetic data
-- `docs`: Build HTML docs from `docs/*.md` and serve locally
-- `validate`: Validate current configuration
-- `install`: Install required dependencies
-- `examples`: Show usage examples
-- `help`: Show help
+- `clean-db`: Clear Neo4j database (removes all data)
+- `docs`: Open local HTML documentation
+- `help`: Show comprehensive help
 
 ## Global
 
@@ -25,7 +23,7 @@ python crashtransformer.py docs       # build/serve docs
 ## setup
 
 ```bash
-python crashtransformer.py setup [--interactive] [--create-env] [--validate] [--install] [--examples]
+python crashtransformer.py setup [--interactive] [--create-env]
 ```
 
 ## run
