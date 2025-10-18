@@ -72,6 +72,7 @@ class CrashGraph(BaseModel):
     entities: List[CrashEntity]
     events: List[CrashEvent]
     relationships: List[CrashRelationship]
+    summary: Optional[str] = None
 
 
 # LLMUsage is now imported from llm_providers module
@@ -606,19 +607,45 @@ def analyze_crash_with_summary_and_usage(narrative_or_formatted: str, metadata: 
         if logger:
             logger.log_crash_processing(crash_id, "llm_response", "Received structured LLM response")
         
-        # Generate a simple summary from the graph
-        summary = _generate_summary_from_graph(result, narrative)
+        # Extract summary from structured output if available, otherwise generate simple one
+        if hasattr(result, 'summary') and result.summary:
+            summary = result.summary
+        else:
+            summary = _generate_summary_from_graph(result, narrative)
         
         end = time.time()
         
-        # Create usage object
+        # Extract token usage from LLM response if available
+        prompt_tokens = 0
+        completion_tokens = 0
+        total_tokens = 0
+        total_cost = 0.0
+        
+        # Try to extract token usage from the result
+        if hasattr(result, 'usage_metadata'):
+            usage_metadata = result.usage_metadata
+            prompt_tokens = getattr(usage_metadata, 'prompt_tokens', 0)
+            completion_tokens = getattr(usage_metadata, 'candidates_tokens', 0)
+            total_tokens = getattr(usage_metadata, 'total_tokens', prompt_tokens + completion_tokens)
+            # Calculate cost based on provider
+            if provider == "google":
+                # Google pricing: $0.000075 per 1K input tokens, $0.0003 per 1K output tokens
+                total_cost = (prompt_tokens * 0.000075 + completion_tokens * 0.0003) / 1000
+        elif hasattr(result, 'response_metadata'):
+            # Alternative metadata structure
+            metadata = result.response_metadata
+            prompt_tokens = metadata.get('prompt_tokens', 0)
+            completion_tokens = metadata.get('completion_tokens', 0)
+            total_tokens = metadata.get('total_tokens', prompt_tokens + completion_tokens)
+            total_cost = metadata.get('total_cost', 0.0)
+        
         usage = LLMUsage(
             provider=provider or DEFAULT_PROVIDER,
             model=model or DEFAULT_MODEL,
-            prompt_tokens=0,  # Not available from structured output
-            completion_tokens=0,  # Not available from structured output
-            total_tokens=0,  # Not available from structured output
-            total_cost_usd=0.0,  # Not available from structured output
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            total_cost_usd=total_cost,
             runtime_sec=end - start
         )
         

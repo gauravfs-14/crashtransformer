@@ -1,8 +1,8 @@
 # 📖 CrashTransformer Usage Guide
 
-> Suggested path: `00_START_HERE.md` → `ENVIRONMENT_SETUP.md` → `INTERACTIVE_SETUP.md` → this guide.
+> **Suggested reading path**: `00_START_HERE.md` → `ENVIRONMENT_SETUP.md` → `INTERACTIVE_SETUP.md` → this guide
 
-Complete guide for using CrashTransformer's main entry point.
+Complete guide for using CrashTransformer's main entry point with comprehensive examples and best practices.
 
 ## 🚀 Quick Start
 
@@ -18,16 +18,16 @@ python crashtransformer.py run --csv crashes.csv
 
 ### **Main Commands**
 
-| Command | Description | Usage |
-|---------|-------------|-------|
-| `setup` | Environment configuration | `python crashtransformer.py setup` |
-| `run` | Execute pipeline | `python crashtransformer.py run --csv file.csv` |
-| `train` | Fine-tune models | `python crashtransformer.py train --training_data data.csv` |
-| `prepare-data` | Prepare training data | `python crashtransformer.py prepare-data --source pipeline` |
-| `validate` | Check configuration | `python crashtransformer.py validate` |
-| `install` | Install dependencies | `python crashtransformer.py install` |
-| `examples` | Show examples | `python crashtransformer.py examples` |
-| `help` | Show help | `python crashtransformer.py help` |
+| Command | Description | Usage | Options |
+|---------|-------------|-------|---------|
+| `setup` | Environment configuration | `python crashtransformer.py setup` | `--interactive`, `--create-env` |
+| `run` | Execute pipeline | `python crashtransformer.py run --csv file.csv` | `--llm_provider`, `--neo4j_enabled` |
+| `train` | Fine-tune models | `python crashtransformer.py train --training_data data.csv` | `--model_name`, `--output_dir` |
+| `prepare-data` | Prepare training data | `python crashtransformer.py prepare-data --source pipeline` | `--output_dir`, `--format` |
+| `validate` | Check configuration | `python crashtransformer.py validate` | `--verbose` |
+| `install` | Install dependencies | `python crashtransformer.py install` | `--dev`, `--upgrade` |
+| `examples` | Show examples | `python crashtransformer.py examples` | `--provider`, `--model` |
+| `help` | Show help | `python crashtransformer.py help` | `--command` |
 
 ### **Interactive Menu**
 
@@ -106,18 +106,18 @@ python crashtransformer.py run --csv crashes.csv --cost_mode api
 python crashtransformer.py run --csv crashes.csv --log_dir custom_logs
 ```
 
-#### **Optimized Two-Phase Pipeline (Cost Efficient)**
+### **Optimized Two-Phase Pipeline (Cost Efficient)**
 
 For comparing multiple models while minimizing LLM costs:
 
-#### Phase 1: Generate graphs and LLM summaries (once)
+#### **Phase 1: Generate graphs and LLM summaries (once)**
 
 ```bash
 # Generate graphs and LLM summaries
 python crashtransformer.py run --csv crashes.csv --model facebook/bart-base --out_dir artifacts/llm_extraction
 ```
 
-#### Phase 2: Compare models using existing graphs
+#### **Phase 2: Compare models using existing graphs**
 
 ```bash
 # Compare different models using existing graphs (no LLM calls)
@@ -125,13 +125,16 @@ python crashtransformer.py run --csv crashes.csv --model facebook/bart-base --ou
 python crashtransformer.py run --csv crashes.csv --model t5-base --out_dir artifacts/t5_comparison --skip_llm
 ```
 
-**Benefits:**
+#### **Benefits of Two-Phase Approach**
 
-- **Reduces LLM costs by ~80%** for multi-model comparisons
-- **Ensures consistent graphs** across all model evaluations  
-- **Enables fair comparison** between models using identical graph structures
+| Benefit | Description | Impact |
+|---------|-------------|---------|
+| **💰 Cost Reduction** | Reduces LLM costs by ~80% for multi-model comparisons | Significant savings on large datasets |
+| **🔄 Consistent Graphs** | Ensures identical graph structures across all model evaluations | Fair comparison between models |
+| **⚡ Faster Processing** | Skip expensive LLM calls in Phase 2 | Faster model comparison |
+| **📊 Better Analysis** | Isolates summarization performance from extraction quality | Clearer insights into model differences |
 
-See `CLI_REFERENCE.md` for full command/flag list.
+> **Note**: See `CLI_REFERENCE.md` for complete command/flag reference.
 
 ## 📊 Input Requirements
 

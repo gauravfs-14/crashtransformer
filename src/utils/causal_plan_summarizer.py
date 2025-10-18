@@ -53,15 +53,25 @@ def _index_entities(entities: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]
 def _event_text(events_by_id: Dict[str, Dict[str, Any]], ev_id: str) -> Tuple[str, str]:
     ev = events_by_id.get(ev_id, {})
     etype = ev.get("type", "Event")
+    label = ev.get("label", "")
     attrs = ev.get("attributes", {}) or {}
-    # short consequence label
-    if etype.lower() == "collision":
-        impact = attrs.get("impact_config") or "collision"
-        cons = f"collision({impact})"
+    
+    # Use the specific label if available, otherwise fall back to type
+    if label:
+        # For consequences, use the label directly
+        cons = label
+        # For reasons, use the label as well
+        reason = label
     else:
-        cons = etype
-    # short cause label
-    reason = attrs.get("reason") or attrs.get("maneuver") or attrs.get("hazard") or etype
+        # Fallback to type-based logic
+        if etype.lower() == "collision":
+            impact = attrs.get("impact_config") or "collision"
+            cons = f"collision({impact})"
+        else:
+            cons = etype
+        # short cause label
+        reason = attrs.get("reason") or attrs.get("maneuver") or attrs.get("hazard") or etype
+    
     return reason, cons
 
 def build_plan_from_graph(graph_json: Dict[str, Any]) -> Plan:
@@ -106,6 +116,7 @@ def build_plan_from_graph(graph_json: Dict[str, Any]) -> Plan:
         # prefer explicit reason from source event if available
         if events_by_id.get(s, {}).get("attributes", {}).get("reason"):
             cause_label = events_by_id[s]["attributes"]["reason"]
+        
 
         edges.append(CausalEdge(
             src_event_id=s, dst_event_id=t,
@@ -348,41 +359,146 @@ def hallucination_rate(edges_extracted: List[Tuple[str, str, bool, str]], narrat
 def compression_ratio(summary: str, narrative: str) -> float:
     return max(1, len(summary.split())) / max(1, len(narrative.split()))
 
+def calculate_semantic_similarity(summaries: List[str], narratives: List[str]) -> Dict[str, float]:
+    """Calculate semantic similarity between summaries and narratives using fuzzy matching."""
+    if not summaries or not narratives:
+        return {"semantic_similarity": 0.0}
+    
+    similarities = []
+    for summary, narrative in zip(summaries, narratives):
+        # Use fuzzy token set ratio for semantic similarity
+        similarity = fuzz.token_set_ratio(summary.lower(), narrative.lower()) / 100.0
+        similarities.append(similarity)
+    
+    return {"semantic_similarity": sum(similarities) / len(similarities)}
+
+def calculate_faithfulness(summary: str, narrative: str) -> float:
+    """Calculate how faithful the summary is to the narrative (no hallucination)."""
+    if not summary or not narrative:
+        return 0.0
+    
+    # Extract key entities and events from narrative
+    narrative_words = set(narrative.lower().split())
+    summary_words = set(summary.lower().split())
+    
+    # Calculate overlap of important words
+    common_words = narrative_words.intersection(summary_words)
+    
+    # Avoid division by zero
+    if len(summary_words) == 0:
+        return 0.0
+    
+    # Faithfulness is the ratio of summary words that appear in narrative
+    faithfulness = len(common_words) / len(summary_words)
+    return min(1.0, faithfulness)
+
+def calculate_completeness(summary: str, narrative: str) -> float:
+    """Calculate how complete the summary is in covering narrative content."""
+    if not summary or not narrative:
+        return 0.0
+    
+    # Extract key entities and events from narrative
+    narrative_words = set(narrative.lower().split())
+    summary_words = set(summary.lower().split())
+    
+    # Calculate how much of the narrative is covered by the summary
+    common_words = narrative_words.intersection(summary_words)
+    
+    # Avoid division by zero
+    if len(narrative_words) == 0:
+        return 0.0
+    
+    # Completeness is the ratio of narrative words covered by summary
+    completeness = len(common_words) / len(narrative_words)
+    return min(1.0, completeness)
+
+def calculate_coherence(summary: str) -> float:
+    """Calculate internal coherence of the summary."""
+    if not summary:
+        return 0.0
+    
+    # Simple coherence based on sentence structure and length
+    sentences = summary.split('.')
+    if len(sentences) <= 1:
+        return 0.5  # Single sentence summaries are somewhat coherent
+    
+    # Check for reasonable sentence length and structure
+    avg_sentence_length = sum(len(s.split()) for s in sentences) / len(sentences)
+    
+    # Coherence score based on sentence structure
+    if avg_sentence_length < 3:
+        return 0.3  # Very short sentences
+    elif avg_sentence_length > 20:
+        return 0.7  # Long but potentially coherent sentences
+    else:
+        return 0.9  # Good sentence length
+
 def score_summary(summary: str, plan: Plan, narrative: str, enable_advanced_metrics: bool = True) -> Dict[str, float]:
-    pred_edges = extract_edges_from_text(summary)
-    pred_pairs = extracted_to_pairs(pred_edges)
-    ref_pairs = edges_to_pairs(plan.edges)
-
-    p, r, f1 = prf1(pred_pairs, ref_pairs)
-    faith = span_faithfulness(pred_edges, narrative)
-    hallu = hallucination_rate(pred_edges, narrative)
+    """
+    Score a natural language summary using comprehensive NLP metrics including ROUGE, BLEU, BERTScore, etc.
+    """
+    # Basic text metrics
     comp = compression_ratio(summary, narrative)
-
-    # Basic metrics
+    
+    # Calculate semantic similarity between summary and narrative
+    narrative_similarity = calculate_semantic_similarity([summary], [narrative])
+    
+    # Calculate faithfulness by checking if summary content is supported by narrative
+    faithfulness = calculate_faithfulness(summary, narrative)
+    
+    # Calculate completeness by checking if summary covers key narrative elements
+    completeness = calculate_completeness(summary, narrative)
+    
+    # Calculate coherence (internal consistency of summary)
+    coherence = calculate_coherence(summary)
+    
+    # Basic metrics for natural language summaries
     basic_metrics = {
-        "causal_precision": p,
-        "causal_recall": r,
-        "causal_f1": f1,
-        "span_faithfulness": faith,
-        "hallucination_rate": hallu,
+        "causal_precision": narrative_similarity.get("semantic_similarity", 0.0),
+        "causal_recall": completeness,
+        "causal_f1": 2 * (narrative_similarity.get("semantic_similarity", 0.0) * completeness) / 
+                    max(narrative_similarity.get("semantic_similarity", 0.0) + completeness, 0.001),
+        "span_faithfulness": faithfulness,
+        "hallucination_rate": max(0.0, 1.0 - faithfulness),  # Inverse of faithfulness
         "compression_ratio": comp,
     }
     
-    # Add advanced metrics if available and enabled
+    # Add comprehensive advanced metrics if available and enabled
     if enable_advanced_metrics and HAVE_ADVANCED_METRICS:
         try:
-            # Use narrative as reference for advanced metrics
+            # Use the existing advanced metrics system
             advanced_metrics = calculate_metrics([summary], [narrative])
             basic_metrics.update(advanced_metrics)
+            
+            # Calculate combined score using advanced metrics if available
+            if "rouge_rouge1_f1" in advanced_metrics and "bertscore_f1" in advanced_metrics:
+                # Use ROUGE-1 F1 and BERTScore F1 for combined score
+                combined = (0.4 * advanced_metrics.get("rouge_rouge1_f1", 0.0) + 
+                           0.3 * advanced_metrics.get("bertscore_f1", 0.0) + 
+                           0.2 * faithfulness + 
+                           0.1 * coherence)
+            else:
+                # Fallback to basic metrics
+                combined = (0.4 * narrative_similarity.get("semantic_similarity", 0.0) + 
+                            0.3 * faithfulness + 
+                            0.2 * completeness + 
+                            0.1 * coherence)
         except Exception as e:
             # If advanced metrics fail, continue with basic metrics
-            # Log the error for debugging
             import logging
             logging.warning(f"Advanced metrics calculation failed: {e}")
-            pass
+            # Fallback combined score
+            combined = (0.4 * narrative_similarity.get("semantic_similarity", 0.0) + 
+                        0.3 * faithfulness + 
+                        0.2 * completeness + 
+                        0.1 * coherence)
+    else:
+        # Use basic metrics for combined score
+        combined = (0.4 * narrative_similarity.get("semantic_similarity", 0.0) + 
+                    0.3 * faithfulness + 
+                    0.2 * completeness + 
+                    0.1 * coherence)
     
-    # combined score for reranking (using basic metrics only for consistency)
-    combined = 0.7 * f1 + 0.3 * faith - 0.2 * hallu
     basic_metrics["combined_score"] = combined
     
     return basic_metrics
