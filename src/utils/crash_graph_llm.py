@@ -286,11 +286,17 @@ examples = [
 # -------------------------------------------------------
 
 system_prompt = (
-    "You are an expert transportation crash data analyst. "
+    "You are an expert transportation crash data analyst specializing in clear, professional crash summaries. "
     "Extract entities (vehicles, locations), events (violations, collisions), and causal relationships from crash narratives. "
     "Focus on CAUSES relationships between events. "
     "Include evidence_span for each event and confidence scores. "
-    "Return structured JSON following the CrashGraph schema."
+    "CRITICAL: You MUST generate a summary field in your response. "
+    "Generate crisp, clear summaries that follow this format: 'Unit X [violation/action] and [outcome] Unit Y [location/context].' "
+    "Examples: 'Unit 1 failed to control speed and rear-ended Unit 2 at a red light.' "
+    "Avoid redundant phrases like 'traffic collision occurred' or 'vehicle crash happened'. "
+    "Be specific about the cause (speed violation, failure to yield, etc.) and outcome (collision type). "
+    "The summary field is REQUIRED and must be populated in every response. "
+    "Return structured JSON following the CrashGraph schema with the summary field included."
 )
 
 
@@ -493,7 +499,7 @@ if __name__ == "__main__":
 
 # Create examples with summaries
 examples_with_summary = [
-    # ===== Example 1: Rear-End Collision with Summary =====
+    # ===== Example 1: Rear-End Collision - Clear Cause-Effect =====
     HumanMessage(
         content="Crash 19955047: Unit 2 was stationary at a red light on S. Texas Blvd. Unit 1 failed to control speed and struck Unit 2 on the back end.",
         name="example_user",
@@ -525,23 +531,136 @@ examples_with_summary = [
                         {"id": "19955047:L1", "label": "ROAD", "name": "S. Texas Blvd", "city": "Weslaco"}
                     ],
                     "events": [
-                        {"id": "19955047:E1", "label": "Stationary at Red Light", "type": "VEHICLE_STATE", "attributes": {}, "evidence_span": "Unit 2 was stationary at a red light"},
-                        {"id": "19955047:E2", "label": "Failure to Control Speed", "type": "VIOLATION", "attributes": {}, "evidence_span": "Unit 1 failed to control speed"},
-                        {"id": "19955047:E3", "label": "Rear-End Collision", "type": "COLLISION", "attributes": {}, "evidence_span": "struck Unit 2 on the back end"}
+                        {"id": "19955047:E1", "label": "Stationary at Red Light", "type": "VEHICLE_STATE", "attributes": {}, "evidence_span": "Unit 2 was stationary at a red light", "confidence": 0.95},
+                        {"id": "19955047:E2", "label": "Failure to Control Speed", "type": "SPEED_VIOLATION", "attributes": {}, "evidence_span": "Unit 1 failed to control speed", "confidence": 0.95},
+                        {"id": "19955047:E3", "label": "Rear-End Collision", "type": "COLLISION", "attributes": {}, "evidence_span": "struck Unit 2 on the back end", "confidence": 0.95}
                     ],
                     "relationships": [
                         {"start": "19955047:U2", "end": "19955047:E1", "type": "PARTICIPATED_IN", "properties": {}},
                         {"start": "19955047:U1", "end": "19955047:E2", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19955047:U1", "end": "19955047:E3", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19955047:U2", "end": "19955047:E3", "type": "PARTICIPATED_IN", "properties": {}},
                         {"start": "19955047:E2", "end": "19955047:E3", "type": "CAUSES", "properties": {}},
-                        {"start": "19955047:U1", "end": "19955047:U2", "type": "HIT", "properties": {}}
+                        {"start": "19955047:L1", "end": "19955047:E1", "type": "LOCATED_AT", "properties": {}},
+                        {"start": "19955047:L1", "end": "19955047:E3", "type": "LOCATED_AT", "properties": {}}
                     ],
-                    "summary": "A rear-end collision occurred when Unit 1 failed to control speed and struck Unit 2, which was stationary at a red light on S. Texas Blvd."
+                    "summary": "Unit 1 failed to control speed and rear-ended Unit 2, which was stationary at a red light on S. Texas Blvd."
                 },
                 "id": "tool-1",
             }
         ],
     ),
     ToolMessage(content="", tool_call_id="tool-1"),
+    
+    # ===== Example 2: Failure to Yield - Clear Causal Chain =====
+    HumanMessage(
+        content="Crash 19956614: Unit 1 was in a private drive waiting to turn west onto Harris. Unit 1 began traveling north while failing to yield the right of way and collided with Unit 2, which was traveling east on Harris.",
+        name="example_user",
+    ),
+    AIMessage(
+        content="",
+        name="example_assistant",
+        tool_calls=[
+            {
+                "name": TOOL_NAME,
+                "args": {
+                    "crash": {
+                        "crash_id": "19956614",
+                        "latitude": 29.69813481,
+                        "longitude": -95.20085379,
+                        "crash_date": "2024-01-03",
+                        "day_of_week": "WED",
+                        "crash_time": "06:49:00",
+                        "county": "Harris",
+                        "city": "Pasadena",
+                        "sae_autonomy_level": "1",
+                        "crash_severity": "Not Injured",
+                        "raw_narrative": "Unit 1 was in a private drive waiting to turn west onto Harris. Unit 1 began traveling north while failing to yield the right of way and collided with Unit 2, which was traveling east on Harris.",
+                        "source": "police_report"
+                    },
+                    "entities": [
+                        {"id": "19956614:U1", "label": "VEHICLE", "unit_id": "1", "name": "Unit 1"},
+                        {"id": "19956614:U2", "label": "VEHICLE", "unit_id": "2", "name": "Unit 2"},
+                        {"id": "19956614:L1", "label": "ROAD", "name": "Harris", "city": "Pasadena"}
+                    ],
+                    "events": [
+                        {"id": "19956614:E1", "label": "Waiting to Turn", "type": "VEHICLE_STATE", "attributes": {}, "evidence_span": "Unit 1 was in a private drive waiting to turn", "confidence": 0.9},
+                        {"id": "19956614:E2", "label": "Failure to Yield Right of Way", "type": "TRAFFIC_VIOLATION", "attributes": {}, "evidence_span": "failing to yield the right of way", "confidence": 0.95},
+                        {"id": "19956614:E3", "label": "Traveling East", "type": "VEHICLE_MOVEMENT", "attributes": {}, "evidence_span": "Unit 2, which was traveling east", "confidence": 0.9},
+                        {"id": "19956614:E4", "label": "Collision", "type": "COLLISION", "attributes": {}, "evidence_span": "collided with Unit 2", "confidence": 0.95}
+                    ],
+                    "relationships": [
+                        {"start": "19956614:U1", "end": "19956614:E1", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19956614:U1", "end": "19956614:E2", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19956614:U2", "end": "19956614:E3", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19956614:U1", "end": "19956614:E4", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19956614:U2", "end": "19956614:E4", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19956614:E2", "end": "19956614:E4", "type": "CAUSES", "properties": {}},
+                        {"start": "19956614:L1", "end": "19956614:E3", "type": "LOCATED_AT", "properties": {}},
+                        {"start": "19956614:L1", "end": "19956614:E4", "type": "LOCATED_AT", "properties": {}}
+                    ],
+                    "summary": "Unit 1 failed to yield right of way from a private drive and collided with Unit 2 traveling east on Harris."
+                },
+                "id": "tool-2",
+            }
+        ],
+    ),
+    ToolMessage(content="", tool_call_id="tool-2"),
+    
+    # ===== Example 3: Speed Violation - Clear Violation-Outcome =====
+    HumanMessage(
+        content="Crash 19958457: Unit 2 was idled at the stop sign at the intersection of Ebony St & Nolana Loop. Unit 1 was idled behind Unit 2. Unit 1 failed to control speed and struck Unit 2.",
+        name="example_user",
+    ),
+    AIMessage(
+        content="",
+        name="example_assistant",
+        tool_calls=[
+            {
+                "name": TOOL_NAME,
+                "args": {
+                    "crash": {
+                        "crash_id": "19958457",
+                        "latitude": 26.23234916,
+                        "longitude": -98.17054019,
+                        "crash_date": "2024-01-03",
+                        "day_of_week": "WED",
+                        "crash_time": "12:11:00",
+                        "county": "Hidalgo",
+                        "city": "Pharr",
+                        "sae_autonomy_level": "1",
+                        "crash_severity": "Possible Injury",
+                        "raw_narrative": "Unit 2 was idled at the stop sign at the intersection of Ebony St & Nolana Loop. Unit 1 was idled behind Unit 2. Unit 1 failed to control speed and struck Unit 2.",
+                        "source": "police_report"
+                    },
+                    "entities": [
+                        {"id": "19958457:U1", "label": "VEHICLE", "unit_id": "1", "name": "Unit 1"},
+                        {"id": "19958457:U2", "label": "VEHICLE", "unit_id": "2", "name": "Unit 2"},
+                        {"id": "19958457:L1", "label": "INTERSECTION", "name": "Ebony St & Nolana Loop", "city": "Pharr"}
+                    ],
+                    "events": [
+                        {"id": "19958457:E1", "label": "Stopped at Stop Sign", "type": "VEHICLE_STATE", "attributes": {}, "evidence_span": "Unit 2 was idled at the stop sign", "confidence": 0.95},
+                        {"id": "19958457:E2", "label": "Waiting Behind Unit 2", "type": "VEHICLE_STATE", "attributes": {}, "evidence_span": "Unit 1 was idled behind Unit 2", "confidence": 0.9},
+                        {"id": "19958457:E3", "label": "Failure to Control Speed", "type": "SPEED_VIOLATION", "attributes": {}, "evidence_span": "Unit 1 failed to control speed", "confidence": 0.95},
+                        {"id": "19958457:E4", "label": "Rear-End Collision", "type": "COLLISION", "attributes": {}, "evidence_span": "struck Unit 2", "confidence": 0.95}
+                    ],
+                    "relationships": [
+                        {"start": "19958457:U2", "end": "19958457:E1", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19958457:U1", "end": "19958457:E2", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19958457:U1", "end": "19958457:E3", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19958457:U1", "end": "19958457:E4", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19958457:U2", "end": "19958457:E4", "type": "PARTICIPATED_IN", "properties": {}},
+                        {"start": "19958457:E3", "end": "19958457:E4", "type": "CAUSES", "properties": {}},
+                        {"start": "19958457:L1", "end": "19958457:E1", "type": "LOCATED_AT", "properties": {}},
+                        {"start": "19958457:L1", "end": "19958457:E4", "type": "LOCATED_AT", "properties": {}}
+                    ],
+                    "summary": "Unit 1 failed to control speed and rear-ended Unit 2, which was stopped at a stop sign at the intersection of Ebony St & Nolana Loop."
+                },
+                "id": "tool-3",
+            }
+        ],
+    ),
+    ToolMessage(content="", tool_call_id="tool-3"),
 ]
 
 
@@ -610,44 +729,67 @@ def analyze_crash_with_summary_and_usage(narrative_or_formatted: str, metadata: 
         # Extract summary from structured output if available, otherwise generate simple one
         if hasattr(result, 'summary') and result.summary:
             summary = result.summary
+            if logger:
+                logger.info(f"Using LLM-generated summary for crash {crash_id}: {summary[:100]}...")
         else:
+            if logger:
+                logger.warning(f"LLM did not generate summary for crash {crash_id}, using fallback")
             summary = _generate_summary_from_graph(result, narrative)
+            if logger:
+                logger.info(f"Generated fallback summary for crash {crash_id}: {summary[:100]}...")
         
         end = time.time()
         
-        # Extract token usage from LLM response if available
-        prompt_tokens = 0
-        completion_tokens = 0
-        total_tokens = 0
-        total_cost = 0.0
-        
-        # Try to extract token usage from the result
-        if hasattr(result, 'usage_metadata'):
-            usage_metadata = result.usage_metadata
-            prompt_tokens = getattr(usage_metadata, 'prompt_tokens', 0)
-            completion_tokens = getattr(usage_metadata, 'candidates_tokens', 0)
-            total_tokens = getattr(usage_metadata, 'total_tokens', prompt_tokens + completion_tokens)
-            # Calculate cost based on provider
-            if provider == "google":
-                # Google pricing: $0.000075 per 1K input tokens, $0.0003 per 1K output tokens
-                total_cost = (prompt_tokens * 0.000075 + completion_tokens * 0.0003) / 1000
-        elif hasattr(result, 'response_metadata'):
-            # Alternative metadata structure
-            metadata = result.response_metadata
-            prompt_tokens = metadata.get('prompt_tokens', 0)
-            completion_tokens = metadata.get('completion_tokens', 0)
-            total_tokens = metadata.get('total_tokens', prompt_tokens + completion_tokens)
-            total_cost = metadata.get('total_cost', 0.0)
-        
-        usage = LLMUsage(
-            provider=provider or DEFAULT_PROVIDER,
-            model=model or DEFAULT_MODEL,
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_tokens=total_tokens,
-            total_cost_usd=total_cost,
-            runtime_sec=end - start
-        )
+        # Use the provider's get_usage_stats method for accurate token extraction
+        if provider and provider != DEFAULT_PROVIDER:
+            try:
+                # Get the provider instance to use its get_usage_stats method
+                from .llm_providers import LLMProviderFactory
+                llm_provider = LLMProviderFactory.create_provider(provider, model or DEFAULT_MODEL, api_key)
+                usage = llm_provider.get_usage_stats(result, start, end)
+            except Exception as e:
+                if logger:
+                    logger.warning(f"Failed to get usage stats from provider {provider}: {e}")
+                # Fallback to manual extraction
+                usage = LLMUsage(
+                    provider=provider or DEFAULT_PROVIDER,
+                    model=model or DEFAULT_MODEL,
+                    prompt_tokens=0,
+                    completion_tokens=0,
+                    total_tokens=0,
+                    total_cost_usd=0.0,
+                    runtime_sec=end - start
+                )
+        else:
+            # For default provider, try to extract manually
+            prompt_tokens = 0
+            completion_tokens = 0
+            total_tokens = 0
+            total_cost = 0.0
+            
+            # Try to extract token usage from the result
+            if hasattr(result, 'usage_metadata'):
+                usage_metadata = result.usage_metadata
+                prompt_tokens = getattr(usage_metadata, 'prompt_tokens', 0)
+                completion_tokens = getattr(usage_metadata, 'candidates_tokens', 0)
+                total_tokens = getattr(usage_metadata, 'total_tokens', prompt_tokens + completion_tokens)
+            elif hasattr(result, 'response_metadata'):
+                # Alternative metadata structure
+                metadata = result.response_metadata
+                prompt_tokens = metadata.get('prompt_tokens', 0)
+                completion_tokens = metadata.get('completion_tokens', 0)
+                total_tokens = metadata.get('total_tokens', prompt_tokens + completion_tokens)
+                total_cost = metadata.get('total_cost', 0.0)
+            
+            usage = LLMUsage(
+                provider=provider or DEFAULT_PROVIDER,
+                model=model or DEFAULT_MODEL,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
+                total_cost_usd=total_cost,
+                runtime_sec=end - start
+            )
         
         if logger:
             logger.log_llm_call(crash_id, usage.provider, usage.model, usage.total_tokens, usage.total_cost_usd)
@@ -663,28 +805,69 @@ def analyze_crash_with_summary_and_usage(narrative_or_formatted: str, metadata: 
 
 
 def _generate_summary_from_graph(graph: CrashGraph, narrative: str) -> str:
-    """Generate a simple summary from the crash graph"""
+    """Generate a high-quality summary from the crash graph"""
     try:
-        # Extract key information from the graph
-        vehicles = [e for e in graph.entities if e.label == "Vehicle"]
-        events = [e for e in graph.events if e.type in ["Violation", "Collision"]]
+        # Extract key information from the graph with better logic
+        vehicles = [e for e in graph.entities if e.label in ["VEHICLE", "Vehicle"]]
+        collisions = [e for e in graph.events if e.type in ["COLLISION", "Collision"]]
+        violations = [e for e in graph.events if e.type in ["SPEED_VIOLATION", "TRAFFIC_VIOLATION", "FAILURE_TO_YIELD", "Violation"]]
         
-        if not vehicles or not events:
-            return f"Vehicle crash occurred: {narrative[:100]}..."
+        # Build a professional summary
+        summary_parts = []
         
-        # Create a simple summary
-        vehicle_ids = [v.unit_id for v in vehicles if v.unit_id]
-        event_types = [e.type for e in events]
+        # Add primary cause
+        if violations:
+            violation_text = violations[0].label.lower()
+            if "speed" in violation_text:
+                summary_parts.append("Unit 1 failed to control speed")
+            elif "yield" in violation_text:
+                summary_parts.append("Unit 1 failed to yield right of way")
+            else:
+                summary_parts.append(f"Unit 1 {violation_text}")
         
-        if "Collision" in event_types and "Violation" in event_types:
-            return f"Vehicle collision involving {', '.join(vehicle_ids)} with traffic violation and collision."
-        elif "Collision" in event_types:
-            return f"Vehicle collision involving {', '.join(vehicle_ids)}."
-        elif "Violation" in event_types:
-            return f"Traffic violation involving {', '.join(vehicle_ids)}."
+        # Add outcome
+        if collisions:
+            collision_text = collisions[0].label.lower()
+            if "rear" in collision_text and "end" in collision_text:
+                summary_parts.append("rear-ended Unit 2")
+            elif "collision" in collision_text:
+                summary_parts.append("collided with Unit 2")
+            else:
+                summary_parts.append(f"{collision_text} with Unit 2")
+        
+        # Add location context from narrative
+        narrative_lower = narrative.lower()
+        location_context = ""
+        if "red light" in narrative_lower:
+            location_context = " at a red light"
+        elif "stop sign" in narrative_lower:
+            location_context = " at a stop sign"
+        elif "intersection" in narrative_lower:
+            location_context = " at an intersection"
+        
+        # Combine into professional summary
+        if summary_parts:
+            summary = " and ".join(summary_parts) + location_context + "."
         else:
-            return f"Vehicle incident involving {', '.join(vehicle_ids)}."
-            
-    except Exception:
-        # Fallback to simple narrative truncation
-        return f"Vehicle crash: {narrative[:100]}..."
+            # Fallback to narrative-based summary
+            if "failed to control speed" in narrative_lower:
+                summary = "Unit 1 failed to control speed and collided with Unit 2."
+            elif "failed to yield" in narrative_lower:
+                summary = "Unit 1 failed to yield right of way and collided with Unit 2."
+            else:
+                summary = f"Traffic collision occurred involving multiple vehicles: {narrative[:100]}..."
+        
+        return summary
+        
+    except Exception as e:
+        # Enhanced fallback with better error handling
+        narrative_lower = narrative.lower()
+        
+        if "failed to control speed" in narrative_lower:
+            return "Unit 1 failed to control speed and collided with Unit 2."
+        elif "failed to yield" in narrative_lower:
+            return "Unit 1 failed to yield right of way and collided with Unit 2."
+        elif "rear" in narrative_lower and "end" in narrative_lower:
+            return "Unit 1 rear-ended Unit 2."
+        else:
+            return f"Traffic collision occurred: {narrative[:100]}..."

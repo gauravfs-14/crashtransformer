@@ -157,26 +157,46 @@ class PlanConditionedSummarizer:
         self.max_summary = max_summary
 
     def build_prompt(self, narrative: str, plan: Plan) -> str:
-        # Use a simpler prompt that works better with BART
-        return f"Summarize this crash report in 1-2 sentences: {narrative.strip()}"
+        # Enhanced prompt for high-quality crash summaries
+        prompt = f"""Generate a concise, professional crash summary that captures the key facts and causal relationships.
+
+CRASH NARRATIVE:
+{narrative.strip()}
+
+CAUSAL PLAN:
+{chr(10).join(plan.lines)}
+
+REQUIREMENTS:
+- Write 1-2 clear, professional sentences
+- Include the primary cause and outcome
+- Mention key vehicles and their roles
+- Use proper grammar and complete sentences
+- Focus on the main causal chain: what caused what
+- Avoid redundant phrases like "traffic collision occurred"
+
+SUMMARY:"""
+        return prompt
 
     def generate(self, narrative: str, plan: Plan, num_return_sequences: int = 1, num_beams: int = 4) -> List[str]:
         prompt = self.build_prompt(narrative, plan)
         ipt = self.tok(prompt, return_tensors="pt", truncation=True, max_length=self.max_input)
         
-        # Generate with parameters optimized for summarization
+        # Generate with parameters optimized for high-quality summarization
         out = self.model.generate(
             **ipt,
             max_length=self.max_summary,
-            min_length=30,  # Ensure minimum length
+            min_length=20,  # Ensure minimum length for meaningful summaries
             num_beams=num_beams,
             num_return_sequences=num_return_sequences,
             do_sample=False,  # Use beam search for better quality
             early_stopping=True,
-            no_repeat_ngram_size=2,  # Avoid repetition
+            no_repeat_ngram_size=3,  # Stronger repetition avoidance
             pad_token_id=self.tok.eos_token_id,
-            length_penalty=1.0,  # Encourage longer summaries
-            repetition_penalty=1.1  # Reduce repetition
+            length_penalty=1.2,  # Encourage longer, more detailed summaries
+            repetition_penalty=1.3,  # Stronger repetition penalty
+            temperature=0.7,  # Add some creativity while maintaining coherence
+            top_p=0.9,  # Nucleus sampling for better quality
+            top_k=50  # Limit vocabulary for better coherence
         )
         
         # Extract only the generated tokens (excluding input tokens)
@@ -192,12 +212,12 @@ class PlanConditionedSummarizer:
                 decoded = decoded[8:].strip()
             summaries.append(decoded)
         
-        # If the model generates empty or very short summaries, create a better fallback
-        if not summaries or all(len(s.strip()) < 30 for s in summaries):
-            # Create a better fallback summary by extracting key information
+        # Enhanced fallback for better quality summaries
+        if not summaries or all(len(s.strip()) < 20 for s in summaries):
+            # Create a high-quality fallback summary by extracting key information
             narrative_lower = narrative.lower()
             
-            # Extract key information
+            # Extract vehicles and their roles
             vehicles = []
             if "unit 1" in narrative_lower:
                 vehicles.append("Unit 1")
@@ -206,22 +226,45 @@ class PlanConditionedSummarizer:
             if "unit 3" in narrative_lower:
                 vehicles.append("Unit 3")
             
-            # Extract key actions
-            actions = []
+            # Extract specific causes and outcomes
+            causes = []
+            outcomes = []
+            
             if "failed to control speed" in narrative_lower:
-                actions.append("failed to control speed")
-            if "struck" in narrative_lower or "collided" in narrative_lower:
-                actions.append("collided")
+                causes.append("failed to control speed")
             if "failed to yield" in narrative_lower:
-                actions.append("failed to yield right of way")
+                causes.append("failed to yield right of way")
+            if "struck" in narrative_lower:
+                outcomes.append("struck")
+            if "collided" in narrative_lower:
+                outcomes.append("collided")
+            if "rear" in narrative_lower and "end" in narrative_lower:
+                outcomes.append("rear-ended")
+            
+            # Extract location context
+            location = ""
             if "red light" in narrative_lower:
-                actions.append("at a red light")
+                location = " at a red light"
+            elif "stop sign" in narrative_lower:
+                location = " at a stop sign"
+            elif "intersection" in narrative_lower:
+                location = " at an intersection"
             
-            # Create a proper summary
-            vehicle_text = " and ".join(vehicles) if vehicles else "multiple vehicles"
-            action_text = " and ".join(actions) if actions else "involved in a collision"
+            # Create a professional summary
+            if causes and outcomes and vehicles:
+                cause_text = " and ".join(causes)
+                outcome_text = " and ".join(outcomes)
+                vehicle_text = " and ".join(vehicles)
+                
+                if len(vehicles) >= 2:
+                    fallback = f"{vehicles[0]} {cause_text} and {outcome_text} {vehicles[1]}{location}."
+                else:
+                    fallback = f"{vehicle_text} {cause_text} and {outcome_text}{location}."
+            else:
+                # Generic but informative fallback
+                vehicle_text = " and ".join(vehicles) if vehicles else "vehicles"
+                fallback = f"A collision occurred involving {vehicle_text} due to traffic violations."
             
-            fallback = f"A traffic collision occurred involving {vehicle_text} {action_text}."
             summaries = [fallback] * num_return_sequences
         
         return summaries
